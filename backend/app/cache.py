@@ -1,0 +1,85 @@
+"""Refresh service — pulls from adapters and writes cached panels into SQLite.
+
+In production this is what the Hermes cron jobs call on a schedule. Here it runs
+once at startup (and on demand via POST /api/refresh) so read endpoints always
+have data. Scope-aware: caches personal + work slices.
+"""
+from __future__ import annotations
+
+import json
+from datetime import datetime, timezone
+
+from . import db
+from .adapters import get_adapters
+from .mock import mock_data as M
+
+SCOPES = ("personal", "work")
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def refresh_all() -> dict:
+    """Pull everything from adapters into the panel cache + base tables."""
+    a = get_adapters()
+    ts = _now()
+    counts = {}
+
+    # --- scoped panels ---
+    for scope in SCOPES:
+        db.put_panel("suggestions", scope, M.scope_get(M.SUGGESTIONS, scope), ts)
+        db.put_panel("today", scope, a.google.today(scope), ts)
+        db.put_panel("inbox", scope, a.google.inbox(scope), ts)
+        db.put_panel("tasks", scope, a.sheet.list_tasks(scope), ts)
+        db.put_panel("task_counts", scope, M.task_counts(scope), ts)
+        db.put_panel("memory", scope, a.memory.recent(scope), ts)
+        db.put_panel("approvals", scope, M.scope_get(M.APPROVALS, scope), ts)
+        db.put_panel("drive_files", scope, a.drive.list_files(scope), ts)
+
+    # --- global panels ---
+    db.put_panel("usage", "both", M.USAGE, ts)
+    db.put_panel("connections", "both", M.CONNECTIONS, ts)
+    db.put_panel("scheduled_jobs", "both", M.SCHEDULED_JOBS, ts)
+    db.put_panel("skills", "both", M.SKILLS, ts)
+    db.put_panel("feeds", "both", a.feeds.all_feeds(), ts)
+
+    # --- base tables (approvals/drafts/usage/tasks) for non-panel queries ---
+    with db.get_conn() as conn:
+        conn.execute("DELETE FROM approvals")
+        conn.execute("DELETE FROM drafts")
+        conn.execute("DELETE FROM tasks")
+        conn.execute("DELETE FROM usage")
+
+        for scope in SCOPES:
+            for ap in M.scope_get(M.APPROVALS, scope):
+                conn.execute(
+                    "INSERT INTO approvals(id,scope,kind,title,summary,target,draft_id,risk,status,data)"
+                    " VALUES(?,?,?,?,?,?,?,?,?,?)",
+                    (ap["id"], scope, ap["kind"], ap["title"], ap["summary"], ap["target"],
+                     ap.get("draft_id"), ap.get("risk"), ap.get("status", "pending"), json.dumps(ap)),
+                )
+            for t in a.sheet.list_tasks(scope):
+                conn.execute(
+                    "INSERT OR REPLACE INTO tasks(id,scope,description,bang,start,followup,due,owner,"
+                    "ball_in_court,category,subcategory,action,status,data) "
+                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (t["id"], scope, t["description"], t.get("bang"), t.get("start"), t.get("followup"),
+                     t.get("due"), t.get("owner"), t.get("ball_in_court"), t.get("category"),
+                     t.get("subcategory"), t.get("action"), t.get("status"), json.dumps(t)),
+                )
+        for d in M.DRAFTS.values():
+            conn.execute("INSERT INTO drafts(id,kind,data) VALUES(?,?,?)",
+                         (d["id"], d["kind"], json.dumps(d)))
+        for u in M.USAGE["ledger"]:
+            conn.execute(
+                "INSERT INTO usage(id,ts,agent,model,tokens,cost_note,scope) VALUES(?,?,?,?,?,?,?)",
+                (u["id"], u["ts"], u["agent"], u["model"], u["tokens"], u["cost_note"], u["scope"]),
+            )
+        counts = {
+            "approvals": conn.execute("SELECT COUNT(*) c FROM approvals").fetchone()["c"],
+            "tasks": conn.execute("SELECT COUNT(*) c FROM tasks").fetchone()["c"],
+            "drafts": conn.execute("SELECT COUNT(*) c FROM drafts").fetchone()["c"],
+        }
+
+    return {"ok": True, "refreshed_at": ts, "counts": counts}

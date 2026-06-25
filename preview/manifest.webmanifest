@@ -1,0 +1,13 @@
+{
+  "name": "Wise Old Man OS",
+  "short_name": "Wise Old Man",
+  "description": "Personal + Work command center",
+  "start_url": "/preview/",
+  "scope": "/preview/",
+  "display": "standalone",
+  "background_color": "#070910",
+  "theme_color": "#0b0e14",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

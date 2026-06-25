@@ -1,0 +1,12 @@
+# Wise Old Man OS — backend
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.0
+python-dotenv>=1.0
+
+# --- Real adapters (uncomment when wiring live data; see NEEDS-FROM-YOU.md) ---
+# google-api-python-client>=2.0
+# google-auth-oauthlib>=1.0
+# google-auth-httplib2>=0.2
+# httpx>=0.27           # feeds (OSRS, news, etc.)
+# discord.py>=2.3       # Discord adapter
