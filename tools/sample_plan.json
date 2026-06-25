@@ -1,0 +1,15 @@
+{
+  "project": "Project Beta — Level 4 Rough-in",
+  "prepared_by": "Gavin Watson",
+  "weeks": 8,
+  "hours_per_week": 40,
+  "activities": [
+    { "name": "Layout & sleeves", "trade": "Laborers", "start": 1, "duration": 1, "peak": 4, "curve": "flat" },
+    { "name": "Overhead piping", "trade": "Pipefitters", "start": 1, "duration": 4, "peak": 10, "curve": "ramp" },
+    { "name": "Plumbing rough-in", "trade": "Plumbers", "start": 2, "duration": 3, "peak": 5, "curve": "flat" },
+    { "name": "Ductwork", "trade": "Sheet Metal", "start": 3, "duration": 3, "peak": 8, "curve": "ramp" },
+    { "name": "Electrical rough-in", "trade": "Electricians", "start": 3, "duration": 4, "peak": 7, "curve": "ramp" },
+    { "name": "Controls", "trade": "Controls", "start": 5, "duration": 3, "peak": 3, "curve": "back" },
+    { "name": "Insulation", "trade": "Insulators", "start": 6, "duration": 2, "peak": 4, "curve": "back" }
+  ]
+}

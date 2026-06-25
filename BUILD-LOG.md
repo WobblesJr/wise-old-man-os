@@ -15,4 +15,40 @@ Reverse-chronological log of what got built, by an autonomous session.
 - `git init`; `.gitignore`, `.env.example`, `README.md`, `run.ps1`, `run.sh`.
 - `NEEDS-FROM-YOU.md` with 5 stubbed items + plug-in points.
 
+### Backend (FastAPI + SQLite) — DONE, verified live
+- `config` (mock-safe defaults + credential status), `db` (7 tables: panels,
+  approvals, drafts, tasks, usage, captures, actions_log), `cache.refresh_all`
+  (adapters → panel cache), `models` (pydantic).
+- Routers: `panels` (/api/panel, /api/dashboard, /api/cockpit, /api/refresh),
+  `tasks` (list+filter, quick-add, patch), `approvals` (list, draft, decide),
+  `capture`, `usage`, `actions` (schedule, run, log).
+- Adapters: `base` interfaces + Mock impls (GooglePersonal, SheetTasks w/ column
+  map, DriveBridge, Feeds, Memory, Discord) + `registry` (mock/live switch).
+- Realistic mock dataset for both Personal + Work scopes.
+- **Verified over HTTP** (uvicorn :8799): health, dashboard(work)=4 sugg/2 appr/
+  7 open/5 mine, tasks filter, quick-add, capture, usage, and approve email →
+  confirmed MOCK no-op ("no email left the building"). Root serves preview (200).
+
+### Preview UI (zero-install) — DONE
+- `preview/index.html`: self-contained React+Tailwind (CDN) — Dashboard (bento),
+  Tasks (table/cards, color spine, filters, quick-add), Cockpit, persistent
+  console, Personal⇄Work toggle. PWA manifest + service worker + icon.
+- Served by the backend at `/` so one command = clickable app, no Node needed.
+- Falls back to embedded mock data if opened as a file (file://).
+
+### Frontend (React + Vite + Tailwind PWA) — DONE (source; needs Node to build)
+- Vite + Tailwind + PWA plugin; store (scope/accent/console/toast), api client,
+  useApi hook, shared ui, Console, screens (Dashboard/Tasks/Cockpit), App shell.
+- Mirrors the preview; fetches from the API with graceful "backend down" states.
+
+### Tools — DONE
+- `tools/manpower_schedule.py`: xlsx manpower-loaded-schedule generator (activities
+  × weeks grid, trade color spine, TOTAL row, man-hours, crew-curve chart; load
+  curves flat/ramp/front/back). Verified: built-in sample → valid 2-sheet xlsx
+  (peak 35 wk5, 6,880 man-hrs). `sample_plan.json` + README included.
+
+### Notes
+- Installed for this machine: fastapi, uvicorn, python-dotenv, openpyxl.
+- HARD LIMIT respected throughout: nothing sent/written/deployed; all effects mocked.
+
 <!-- newest entries go ABOVE this line as work proceeds -->
