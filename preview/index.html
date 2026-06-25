@@ -6,105 +6,192 @@
 <title>Wise Old Man OS — Preview</title>
 <meta name="theme-color" content="#0b0e14" />
 <link rel="manifest" href="/preview/manifest.webmanifest" />
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = {
-  darkMode: 'class',
-  theme: { extend: {
-    fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','sans-serif'] },
-    colors: {
-      ink: { 950:'#070910', 900:'#0b0e14', 850:'#10141d', 800:'#151a24', 700:'#1d2430', 600:'#283041', 500:'#3a4456' },
-      line: '#222a38',
-      mut: '#8a94a6',
-      acc: { personal:'#34d399', work:'#f59e0b' },
-    },
-    boxShadow: { tile: '0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 24px rgba(0,0,0,0.35)' },
-  }}
-}
-</script>
 <style>
-  html,body,#root{height:100%}
-  body{background:#070910;color:#e7ebf2;-webkit-font-smoothing:antialiased}
-  ::-webkit-scrollbar{width:10px;height:10px}
-  ::-webkit-scrollbar-thumb{background:#283041;border-radius:6px}
-  ::-webkit-scrollbar-track{background:transparent}
-  .tnum{font-variant-numeric:tabular-nums}
-  .fade{animation:f .25s ease}
-  @keyframes f{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* ===================== Wise Old Man OS — self-contained styles ===================== */
+:root{
+  --ink-950:#070910; --ink-900:#0b0e14; --ink-850:#10141d; --ink-800:#151a24;
+  --ink-700:#1d2430; --ink-600:#283041; --ink-500:#3a4456;
+  --line:#222a38; --mut:#8a94a6; --text:#e7ebf2;
+  --accent:#34d399; /* swapped by scope */
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--ink-950); color:var(--text);
+  font-family:'Inter',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased; font-size:14px;
+}
+button{font-family:inherit; cursor:pointer; border:0; background:none; color:inherit}
+input,select{font-family:inherit}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--ink-600);border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+.tnum{font-variant-numeric:tabular-nums}
+.app{height:100%;display:flex;flex-direction:column}
+.fade{animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* top bar */
+.topbar{display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--line);
+  background:rgba(7,9,16,.8);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20}
+.wm{display:flex;align-items:center;gap:10px;user-select:none}
+.wm .glyph{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-weight:900;
+  color:var(--ink-950);background:var(--accent);box-shadow:0 0 18px color-mix(in srgb,var(--accent) 35%,transparent)}
+.wm .name{font-weight:600;letter-spacing:-.01em;font-size:15px;line-height:1.1}
+.wm .sub{font-size:10px;text-transform:uppercase;letter-spacing:.18em;color:var(--mut)}
+.nav{display:flex;align-items:center;gap:4px;margin-left:14px}
+.nav button{font-size:13px;padding:6px 12px;border-radius:8px;color:var(--mut)}
+.nav button:hover{color:#fff}
+.nav button.on{background:var(--ink-800);color:#fff}
+.right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.toggle{display:flex;align-items:center;background:var(--ink-850);border:1px solid var(--line);border-radius:999px;padding:2px}
+.toggle button{font-size:12px;padding:4px 12px;border-radius:999px;color:var(--mut);text-transform:capitalize}
+.toggle button.on{color:var(--ink-950);font-weight:600}
+.badge{font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid var(--line);color:var(--mut)}
+
+main{flex:1;overflow-y:auto;padding:16px 20px}
+
+/* grid + tiles */
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.tile{background:var(--ink-900);border:1px solid var(--line);border-radius:16px;padding:16px;
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 8px 24px rgba(0,0,0,.35);display:flex;flex-direction:column;min-height:0}
+.tile h3{margin:0 0 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--mut)}
+.tile .head{display:flex;align-items:center;justify-content:space-between}
+.tile .head h3{margin:0}
+.col-4{grid-column:span 4} .col-8{grid-column:span 8} .col-5{grid-column:span 5}
+.col-6{grid-column:span 6} .col-7{grid-column:span 7} .col-12{grid-column:span 12}
+.hero{grid-column:span 8;background:linear-gradient(135deg,var(--ink-850),var(--ink-900));
+  border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+
+.pill{font-size:10px;padding:2px 6px;border-radius:6px;font-weight:500}
+.mut{color:var(--mut)} .small{font-size:11px} .xs{font-size:10px}
+.row{display:flex;align-items:center;gap:10px}
+.spaced{display:flex;align-items:center;justify-content:space-between}
+.dot{width:6px;height:6px;border-radius:999px;display:inline-block}
+.dot2{width:8px;height:8px;border-radius:999px;display:inline-block;flex:0 0 auto}
+
+.card{background:var(--ink-850);border:1px solid var(--line);border-radius:12px;padding:12px}
+.card:hover{border-color:var(--ink-500)}
+.btn-acc{background:var(--accent);color:var(--ink-950);font-weight:600;border-radius:8px;padding:6px 10px;font-size:11px;width:100%}
+.btn-acc:active{transform:scale(.98)}
+.btn-ghost{border:1px solid var(--line);color:var(--mut);border-radius:8px;padding:4px 8px;font-size:11px}
+.btn-ghost:hover{color:#fff}
+
+.sug-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.list>*{margin-bottom:6px} .list>*:last-child{margin-bottom:0}
+.mini{background:var(--ink-850);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+
+input.field,select.field{background:var(--ink-850);border:1px solid var(--line);border-radius:8px;
+  padding:6px 10px;color:var(--text);font-size:12px;outline:none}
+input.field:focus,select.field:focus{border-color:var(--ink-500)}
+
+/* tasks table */
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{text-align:left;font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--mut);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{padding:8px 10px;border-bottom:1px solid var(--ink-850);vertical-align:middle}
+tbody tr:hover{background:rgba(16,20,29,.6)}
+.spine{border-left:4px solid var(--c)}
+.strike{text-decoration:line-through;color:var(--mut)}
+.tasktable-wrap{background:var(--ink-900);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.chip{font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);color:var(--mut)}
+.chip.on{color:var(--ink-950);font-weight:600}
+.taskcards{display:none}
+
+/* histogram */
+.bars{display:flex;align-items:flex-end;gap:4px;height:48px}
+.bars .b{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bars .b .fill{width:100%;border-radius:3px 3px 0 0}
+.barlabel{font-size:8px;color:var(--mut)}
+.meter{height:8px;border-radius:999px;background:var(--ink-700);overflow:hidden;margin-bottom:4px}
+.meter .fill{height:100%;border-radius:999px;background:var(--accent)}
+
+/* console */
+.console{border-top:1px solid var(--line);background:rgba(7,9,16,.92);backdrop-filter:blur(8px);padding:8px 20px}
+.console .log{max-height:112px;overflow-y:auto;margin-bottom:6px;display:flex;flex-direction:column;gap:4px}
+.console .line{font-size:11px;display:flex;gap:8px}
+.console form{display:flex;align-items:center;gap:8px}
+.console input{flex:1;background:none;border:0;outline:none;color:var(--text);font-size:13px;padding:6px 0}
+.mic{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;color:var(--mut)}
+.mic:hover{color:#fff}
+.send{padding:0 12px;height:32px;border-radius:8px;background:var(--accent);color:var(--ink-950);font-weight:600;font-size:12px}
+
+/* mobile nav + toast */
+.mnav{display:none;border-top:1px solid var(--line);background:var(--ink-950)}
+.mnav button{flex:1;padding:8px;font-size:11px;color:var(--mut)}
+.mnav button.on{color:#fff}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:30;background:var(--ink-800);
+  border:1px solid var(--line);border-radius:12px;padding:8px 16px;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+
+/* responsive */
+@media(max-width:1024px){
+  .col-4,.col-5,.col-6,.col-7,.col-8,.hero{grid-column:span 12}
+  .col-6{grid-column:span 12}
+}
+@media(min-width:768px) and (max-width:1024px){
+  .half{grid-column:span 6 !important}
+}
+@media(max-width:767px){
+  .nav{display:none} .mnav{display:flex} .sug-grid{grid-template-columns:1fr}
+  .tasktable-wrap{display:none} .taskcards{display:block}
+  main{padding:12px}
+}
 </style>
 </head>
-<body class="dark">
-<div id="root"></div>
-<script type="text/babel" data-presets="react">
-const { useState, useMemo, useEffect, useRef } = React;
+<body>
+<div class="app" id="app"></div>
 
+<script>
 /* ============================ MOCK DATA (mirrors backend) ============================ */
-const MOCK = {
-  suggestions: {
-    personal: [
+var MOCK = {
+  suggestions:{
+    personal:[
       {id:'p-s1',title:'Book your passport appointment',rationale:'Due Jul 10 and you have 2 free mornings next week.',action_label:'Add to calendar',urgency:'high'},
       {id:'p-s2',title:'Pay quarterly estimated taxes',rationale:'Due Jun 30 — 5 days. Not started yet.',action_label:'Open checklist',urgency:'high'},
       {id:'p-s3',title:'Confirm dentist reschedule',rationale:'Draft reply ready; they’re waiting on you.',action_label:'Review & send',urgency:'med'},
-      {id:'p-s4',title:'Grab DC United presale tickets',rationale:'Presale started 5h ago; you flagged this match.',action_label:'Open task',urgency:'low'},
-    ],
-    work: [
+      {id:'p-s4',title:'Grab DC United presale tickets',rationale:'Presale started 5h ago; you flagged this match.',action_label:'Open task',urgency:'low'}],
+    work:[
       {id:'w-s1',title:'Send RFI-014 cover note to GC',rationale:'Protects the L2 rough-in sequence; draft ready.',action_label:'Review & send',urgency:'high'},
       {id:'w-s2',title:'Finish Level 3 manpower-loaded schedule',rationale:'Due Jun 28; v0.3 drafted, needs crew-curve sign-off.',action_label:'Open task',urgency:'high'},
       {id:'w-s3',title:'Accept Thursday recovery-plan meeting',rationale:'Turner GC replied 1h ago proposing Thursday.',action_label:'Add to calendar',urgency:'med'},
-      {id:'w-s4',title:'Sign off 3 open submittals',rationale:'Priya cleaned the log; 3 items need you.',action_label:'Open inbox',urgency:'low'},
-    ],
-  },
-  approvals: {
+      {id:'w-s4',title:'Sign off 3 open submittals',rationale:'Priya cleaned the log; 3 items need you.',action_label:'Open inbox',urgency:'low'}]},
+  approvals:{
     personal:[
-      {id:'p-a1',kind:'email_send',title:'Reply to dentist re: reschedule',summary:'Confirm Tue 9:00 AM cleaning, ask to move to afternoon.',target:'Dr. Pham Dental',risk:'low'},
-      {id:'p-a2',kind:'calendar_create',title:'Add ‘Passport appointment’',summary:'Mon Jul 6, 10:30 AM at USPS Main St.',target:'Personal calendar',risk:'low'},
-      {id:'p-a3',kind:'sheet_write',title:'Mark ‘OSRS goals’ complete',summary:'Set status=completed on row p-t8.',target:'G-Suite Dashboard',risk:'low'},
-    ],
+      {id:'p-a1',title:'Reply to dentist re: reschedule',summary:'Confirm Tue 9:00 AM cleaning, ask to move to afternoon.',target:'Dr. Pham Dental',risk:'low'},
+      {id:'p-a2',title:'Add ‘Passport appointment’',summary:'Mon Jul 6, 10:30 AM at USPS Main St.',target:'Personal calendar',risk:'low'},
+      {id:'p-a3',title:'Mark ‘OSRS goals’ complete',summary:'Set status=completed on row p-t8.',target:'G-Suite Dashboard',risk:'low'}],
     work:[
-      {id:'w-a1',kind:'email_send',title:'Send RFI cover note to GC',summary:'Attach RFI-014, request response by Fri.',target:'Turner GC',risk:'med'},
-      {id:'w-a2',kind:'schedule_post',title:'Post manpower schedule to team',summary:'Share L3 schedule v0.3 in #project-alpha.',target:'Discord #project-alpha',risk:'low'},
-    ],
-  },
-  today: {
+      {id:'w-a1',title:'Send RFI cover note to GC',summary:'Attach RFI-014, request response by Fri.',target:'Turner GC',risk:'med'},
+      {id:'w-a2',title:'Post manpower schedule to team',summary:'Share L3 schedule v0.3 in #project-alpha.',target:'Discord #project-alpha',risk:'low'}]},
+  today:{
     personal:[
       {id:'p-c1',time:'12:30 PM',title:'Lunch with Marcus',where:'Cava',kind:'event'},
       {id:'p-c2',time:'3:00 PM',title:'Call: car insurance renewal',where:'Phone',kind:'action'},
-      {id:'p-c3',time:'8:00 PM',title:'OSRS raid (ToB)',where:'Discord',kind:'event'},
-    ],
+      {id:'p-c3',time:'8:00 PM',title:'OSRS raid (ToB)',where:'Discord',kind:'event'}],
     work:[
       {id:'w-c1',time:'9:00 AM',title:'Daily huddle — Project Alpha',where:'Trailer',kind:'event'},
       {id:'w-c2',time:'11:00 AM',title:'Coordination call — MEP clash',where:'Teams',kind:'event'},
-      {id:'w-c3',time:'2:00 PM',title:'Walk L3 rough-in',where:'Site',kind:'action'},
-    ],
-  },
-  inbox: {
+      {id:'w-c3',time:'2:00 PM',title:'Walk L3 rough-in',where:'Site',kind:'action'}]},
+  inbox:{
     personal:[
       {id:'p-i1',source:'gmail',from:'USPS',subject:'Your appointment options',snippet:'Several passport slots available next week...',unread:true,ts:'2h'},
       {id:'p-i2',source:'gmail',from:'DC United',subject:'Presale starts today',snippet:'Members get first access to the Inter Miami match...',unread:true,ts:'5h'},
-      {id:'p-i3',source:'discord',from:'#osrs-clan',subject:'Raids tonight?',snippet:'Forming a team for ToB at 8...',unread:false,ts:'1d'},
-    ],
+      {id:'p-i3',source:'discord',from:'#osrs-clan',subject:'Raids tonight?',snippet:'Forming a team for ToB at 8...',unread:false,ts:'1d'}],
     work:[
       {id:'w-i1',source:'gmail',from:'Turner GC',subject:'RE: Schedule recovery',snippet:'We can meet Thursday to walk the plan...',unread:true,ts:'1h'},
       {id:'w-i2',source:'gmail',from:'Priya (coord)',subject:'Submittal log updated',snippet:'3 items still need your sign-off...',unread:true,ts:'3h'},
-      {id:'w-i3',source:'discord',from:'#project-alpha',subject:'Field photos',snippet:'Posted today’s L3 rough-in photos...',unread:false,ts:'1d'},
-    ],
-  },
-  memory: {
+      {id:'w-i3',source:'discord',from:'#project-alpha',subject:'Field photos',snippet:'Posted today’s L3 rough-in photos...',unread:false,ts:'1d'}]},
+  memory:{
     personal:[
       {id:'m-p1',text:'Prefers afternoon appointments when possible.',tag:'preference',ts:'today'},
       {id:'m-p2',text:'Italy trip: Jul 12–22. Passport must be valid.',tag:'travel',ts:'2d'},
-      {id:'m-p3',text:'OSRS main goal: quest cape before fall.',tag:'hobby',ts:'5d'},
-    ],
+      {id:'m-p3',text:'OSRS main goal: quest cape before fall.',tag:'hobby',ts:'5d'}],
     work:[
       {id:'m-w1',text:'GC PM is Dana at Turner; fastest mid-morning.',tag:'contact',ts:'today'},
       {id:'m-w2',text:'Project Alpha peak manpower target: 14 in mid-July.',tag:'project',ts:'1d'},
-      {id:'m-w3',text:'VE chilled-water option on hold pending owner.',tag:'project',ts:'3d'},
-    ],
-  },
-  tasks: {
+      {id:'m-w3',text:'VE chilled-water option on hold pending owner.',tag:'project',ts:'3d'}]},
+  tasks:{
     personal:[
       {id:'p-t1',bang:'!',description:'Renew passport before Italy trip',start:'06/20',followup:'06/28',due:'07/10',owner:'Gavin',ball_in_court:'Me',category:'Travel',subcategory:'Documents',action:'action',status:'in_progress'},
       {id:'p-t2',bang:'',description:'Wait on dentist to confirm cleaning slot',start:'06/22',followup:'06/26',due:'06/30',owner:'Gavin',ball_in_court:'Dr. Pham office',category:'Health',subcategory:'Dental',action:'wait',status:'blocked'},
@@ -113,8 +200,7 @@ const MOCK = {
       {id:'p-t5',bang:'',description:'Hold: decide on gym membership renewal',start:'06/15',followup:'07/01',due:'07/15',owner:'Gavin',ball_in_court:'Me',category:'Health',subcategory:'Fitness',action:'hold',status:'not_started'},
       {id:'p-t6',bang:'',description:'DC United vs Inter Miami — buy tickets',start:'06/25',followup:'',due:'07/12',owner:'Gavin',ball_in_court:'Me',category:'Social',subcategory:'Events',action:'event',status:'not_started'},
       {id:'p-t7',bang:'',description:'Delegated: ask brother to water plants',start:'06/21',followup:'07/08',due:'07/09',owner:'Gavin',ball_in_court:'Marcus',category:'Home',subcategory:'Errands',action:'wait',status:'delegated'},
-      {id:'p-t8',bang:'',description:'Update OSRS goals spreadsheet',start:'06/23',followup:'',due:'06/29',owner:'Gavin',ball_in_court:'Me',category:'Hobby',subcategory:'OSRS',action:'action',status:'completed'},
-    ],
+      {id:'p-t8',bang:'',description:'Update OSRS goals spreadsheet',start:'06/23',followup:'',due:'06/29',owner:'Gavin',ball_in_court:'Me',category:'Hobby',subcategory:'OSRS',action:'action',status:'completed'}],
     work:[
       {id:'w-t1',bang:'!',description:'Submit RFI on mechanical room clearances',start:'06/22',followup:'06/26',due:'06/27',owner:'Gavin',ball_in_court:'Me',category:'Project Alpha',subcategory:'RFI',action:'action',status:'in_progress'},
       {id:'w-t2',bang:'',description:'Wait on GC response to schedule recovery',start:'06/19',followup:'06/26',due:'07/01',owner:'Gavin',ball_in_court:'Turner GC',category:'Project Alpha',subcategory:'Schedule',action:'wait',status:'blocked'},
@@ -123,37 +209,29 @@ const MOCK = {
       {id:'w-t5',bang:'',description:'Hold: VE option on chilled water piping',start:'06/18',followup:'07/02',due:'07/10',owner:'Gavin',ball_in_court:'Me',category:'Project Beta',subcategory:'VE',action:'hold',status:'not_started'},
       {id:'w-t6',bang:'',description:'Pre-con meeting — Level 4 rough-in',start:'06/29',followup:'',due:'06/29',owner:'Gavin',ball_in_court:'Me',category:'Project Alpha',subcategory:'Meeting',action:'event',status:'not_started'},
       {id:'w-t7',bang:'',description:'Delegated submittal log cleanup',start:'06/21',followup:'06/27',due:'07/03',owner:'Gavin',ball_in_court:'Priya (coord)',category:'Project Beta',subcategory:'Submittals',action:'wait',status:'delegated'},
-      {id:'w-t8',bang:'',description:'Close out punchlist from walkthrough',start:'06/17',followup:'',due:'06/24',owner:'Gavin',ball_in_court:'Me',category:'Project Alpha',subcategory:'Closeout',action:'action',status:'completed'},
-    ],
-  },
-  usage: {
-    plan:'Claude Max 20x', window_resets_in:'3h 12m', plan_usage_pct:41,
-    tokens_today:1284500, tokens_week:7932100,
+      {id:'w-t8',bang:'',description:'Close out punchlist from walkthrough',start:'06/17',followup:'',due:'06/24',owner:'Gavin',ball_in_court:'Me',category:'Project Alpha',subcategory:'Closeout',action:'action',status:'completed'}]},
+  usage:{plan:'Claude Max 20x',window_resets_in:'3h 12m',plan_usage_pct:41,tokens_today:1284500,tokens_week:7932100,
     by_day:[{day:'Thu',tokens:980000},{day:'Fri',tokens:1420000},{day:'Sat',tokens:640000},{day:'Sun',tokens:720000},{day:'Mon',tokens:1510000},{day:'Tue',tokens:1377600},{day:'Wed',tokens:1284500}],
     ledger:[
       {id:'u1',ts:'09:14',agent:'Inbox triage',model:'claude-opus-4-8',tokens:18420,scope:'work'},
       {id:'u2',ts:'09:02',agent:'Suggestion engine',model:'claude-opus-4-8',tokens:9650,scope:'personal'},
       {id:'u3',ts:'08:47',agent:'RFI drafter',model:'claude-opus-4-8',tokens:22110,scope:'work'},
       {id:'u4',ts:'08:30',agent:'Schedule builder',model:'claude-opus-4-8',tokens:41200,scope:'work'},
-      {id:'u5',ts:'07:55',agent:'Memory sync',model:'claude-haiku-4-5',tokens:3300,scope:'personal'},
-    ],
-  },
+      {id:'u5',ts:'07:55',agent:'Memory sync',model:'claude-haiku-4-5',tokens:3300,scope:'personal'}]},
   connections:[
-    {id:'c1',name:'Google — Personal',scope:'personal',detail:'Gmail · Calendar · Drive · Sheets',status:'stubbed',note:'OAuth pending (#1)'},
-    {id:'c2',name:'G-Suite Dashboard Sheet',scope:'personal',detail:'Task source-of-truth',status:'stubbed',note:'Sheet ID pending (#2)'},
-    {id:'c3',name:'Limbach — Work',scope:'work',detail:'Work Drive bridge',status:'blocked',note:'Pending IT (#4)'},
-    {id:'c4',name:'Cloudflare Tunnel',scope:'both',detail:'Public hostname for VPS',status:'stubbed',note:'Hostname pending (#3)'},
-    {id:'c5',name:'OSRS Feeds',scope:'personal',detail:'Hiscores + Wiki prices',status:'mock',note:'Public APIs; mock for now'},
-    {id:'c6',name:'Discord',scope:'both',detail:'Notify + console relay',status:'stubbed',note:'Bot token pending'},
-    {id:'c7',name:'Memory (Obsidian git)',scope:'both',detail:'Vault sync',status:'stubbed',note:'Vault path pending'},
-  ],
+    {id:'c1',name:'Google — Personal',detail:'Gmail · Calendar · Drive · Sheets',status:'stubbed',note:'OAuth pending (#1)'},
+    {id:'c2',name:'G-Suite Dashboard Sheet',detail:'Task source-of-truth',status:'stubbed',note:'Sheet ID pending (#2)'},
+    {id:'c3',name:'Limbach — Work',detail:'Work Drive bridge',status:'blocked',note:'Pending IT (#4)'},
+    {id:'c4',name:'Cloudflare Tunnel',detail:'Public hostname for VPS',status:'stubbed',note:'Hostname pending (#3)'},
+    {id:'c5',name:'OSRS Feeds',detail:'Hiscores + Wiki prices',status:'mock',note:'Public APIs; mock for now'},
+    {id:'c6',name:'Discord',detail:'Notify + console relay',status:'stubbed',note:'Bot token pending'},
+    {id:'c7',name:'Memory (Obsidian git)',detail:'Vault sync',status:'stubbed',note:'Vault path pending'}],
   jobs:[
     {id:'j1',name:'Inbox triage',cron:'*/15 * * * *',last:'12m ago',next:'in 3m',status:'ok'},
     {id:'j2',name:'Suggestion refresh',cron:'0 */1 * * *',last:'24m ago',next:'in 36m',status:'ok'},
     {id:'j3',name:'Sheet ↔ cache sync',cron:'*/10 * * * *',last:'4m ago',next:'in 6m',status:'stubbed'},
     {id:'j4',name:'Feeds pull (OSRS/news)',cron:'0 */6 * * *',last:'2h ago',next:'in 4h',status:'mock'},
-    {id:'j5',name:'Memory git push',cron:'0 22 * * *',last:'—',next:'tonight 22:00',status:'stubbed'},
-  ],
+    {id:'j5',name:'Memory git push',cron:'0 22 * * *',last:'—',next:'tonight 22:00',status:'stubbed'}],
   skills:[
     {id:'sk1',name:'Inbox triage',desc:'Cluster + summarize unread, propose replies',scope:'both'},
     {id:'sk2',name:'RFI drafter',desc:'Draft construction RFIs from context',scope:'work'},
@@ -161,525 +239,269 @@ const MOCK = {
     {id:'sk4',name:'Suggestion engine',desc:'Rank next-best actions across scopes',scope:'both'},
     {id:'sk5',name:'Memory keeper',desc:'Write/recall facts to Obsidian vault',scope:'both'},
     {id:'sk6',name:'Feed watcher',desc:'OSRS hiscores/prices, events, news',scope:'personal'},
-    {id:'sk7',name:'Quick capture',desc:'Turn a note into a task/draft',scope:'both'},
-  ],
+    {id:'sk7',name:'Quick capture',desc:'Turn a note into a task/draft',scope:'both'}]
 };
 
-/* ============================ HELPERS ============================ */
-const ACTION_SPINE = { action:'#ef4444', wait:'#eab308', hold:'#a855f7', read:'#22c55e', event:'#3b82f6' };
-const ACTION_LABEL = { action:'Action', wait:'Wait', hold:'Hold', read:'Read', event:'Event' };
-const STATUS = {
-  not_started:{label:'Not started',dot:'#64748b'},
-  in_progress:{label:'In progress',dot:'#38bdf8'},
-  completed:{label:'Completed',dot:'#22c55e'},
-  delegated:{label:'Delegated',dot:'#a855f7'},
-  blocked:{label:'Blocked',dot:'#ef4444'},
-};
-const URG = { high:'#ef4444', med:'#eab308', low:'#64748b' };
-const fmtTok = n => n>=1e6 ? (n/1e6).toFixed(2)+'M' : n>=1e3 ? (n/1e3).toFixed(0)+'k' : ''+n;
+/* ============================ CONSTANTS ============================ */
+var ACTION_SPINE={action:'#ef4444',wait:'#eab308',hold:'#a855f7',read:'#22c55e',event:'#3b82f6'};
+var ACTION_LABEL={action:'Action',wait:'Wait',hold:'Hold',read:'Read',event:'Event'};
+var STATUS={not_started:{label:'Not started',dot:'#64748b'},in_progress:{label:'In progress',dot:'#38bdf8'},
+  completed:{label:'Completed',dot:'#22c55e'},delegated:{label:'Delegated',dot:'#a855f7'},blocked:{label:'Blocked',dot:'#ef4444'}};
+var URG={high:'#ef4444',med:'#eab308',low:'#64748b'};
+var CONN={ok:'#22c55e',mock:'#38bdf8',stubbed:'#eab308',blocked:'#ef4444'};
+var FILTERS=[['all','All'],['mine','Mine'],['action','Action'],['wait','Wait'],['hold','Hold'],['read','Read'],['event','Event']];
+function fmtTok(n){return n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e3?Math.round(n/1e3)+'k':''+n}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 
-/* try backend; fall back to embedded MOCK so file:// double-click still works */
-async function tryApi(path){
-  try{
-    const r = await fetch(path,{cache:'no-store'});
-    if(!r.ok) throw 0; return await r.json();
-  }catch(e){ return null; }
+/* ============================ STATE ============================ */
+var S={scope:'personal',view:'home',filter:'all',log:[],extra:{personal:[],work:[]}};
+function accent(){return S.scope==='personal'?'#34d399':'#f59e0b'}
+
+/* ============================ RENDER ============================ */
+function h(html){var d=document.createElement('div');d.innerHTML=html;return d}
+
+function render(){
+  document.documentElement.style.setProperty('--accent',accent());
+  var app=document.getElementById('app');
+  app.innerHTML=topbar()+'<main id="main">'+view()+'</main>'+mnav()+consoleBar()+(S.toast?toast():'');
+  wire();
+  var m=document.getElementById('main'); if(m) m.firstChild&&m.firstChild.classList&&m.firstChild.classList.add('fade');
 }
 
-/* ============================ SMALL UI ============================ */
-function Wordmark({accent}){
-  return (
-    <div className="flex items-center gap-2.5 select-none">
-      <div className="grid place-items-center w-9 h-9 rounded-xl font-black text-ink-950"
-           style={{background:accent, boxShadow:`0 0 18px ${accent}55`}}>W</div>
-      <div className="leading-tight">
-        <div className="font-semibold tracking-tight text-[15px]">Wise Old Man</div>
-        <div className="text-[10px] uppercase tracking-[0.18em] text-mut">command center</div>
-      </div>
-    </div>
-  );
+function topbar(){
+  var nav=['home','tasks','cockpit'].map(function(k){
+    var label={home:'Dashboard',tasks:'Tasks',cockpit:'Cockpit'}[k];
+    return '<button data-view="'+k+'" class="'+(S.view===k?'on':'')+'">'+label+'</button>';
+  }).join('');
+  var tog=['personal','work'].map(function(s){
+    var on=S.scope===s; var bg=s==='personal'?'#34d399':'#f59e0b';
+    return '<button data-scope="'+s+'" class="'+(on?'on':'')+'" style="'+(on?'background:'+bg:'')+'">'+s+'</button>';
+  }).join('');
+  return '<header class="topbar">'+
+    '<div class="wm"><div class="glyph">W</div><div><div class="name">Wise Old Man</div><div class="sub">command center</div></div></div>'+
+    '<nav class="nav">'+nav+'</nav>'+
+    '<div class="right"><div class="toggle">'+tog+'</div><span class="badge">MOCK</span></div>'+
+  '</header>';
+}
+function mnav(){
+  return '<nav class="mnav">'+['home','tasks','cockpit'].map(function(k){
+    var label={home:'Dashboard',tasks:'Tasks',cockpit:'Cockpit'}[k];
+    return '<button data-view="'+k+'" class="'+(S.view===k?'on':'')+'" style="'+(S.view===k?'border-top:2px solid '+accent():'')+'">'+label+'</button>';
+  }).join('')+'</nav>';
+}
+function view(){return S.view==='home'?dashboard():S.view==='tasks'?tasks():cockpit()}
+
+/* ---------- dashboard ---------- */
+function dashboard(){
+  var sc=S.scope, a=accent();
+  var sg=MOCK.suggestions[sc], ap=MOCK.approvals[sc], td=MOCK.today[sc], ib=MOCK.inbox[sc], mem=MOCK.memory[sc], u=MOCK.usage;
+  var tk=MOCK.tasks[sc].concat(S.extra[sc]);
+  var open=tk.filter(function(t){return t.status!=='completed'});
+  var byA={},byS={}; tk.forEach(function(t){byA[t.action]=(byA[t.action]||0)+1;byS[t.status]=(byS[t.status]||0)+1});
+  var mine=open.filter(function(t){return t.ball_in_court==='Me'}).length;
+
+  var sugCards=sg.map(function(s){
+    return '<div class="card"><div class="row" style="align-items:flex-start;gap:8px">'+
+      '<span class="dot" style="margin-top:5px;background:'+URG[s.urgency]+'"></span>'+
+      '<div><div style="font-size:13px;font-weight:500;line-height:1.3">'+esc(s.title)+'</div>'+
+      '<div class="small mut" style="margin-top:2px;line-height:1.3">'+esc(s.rationale)+'</div></div></div>'+
+      '<button class="btn-acc" style="margin-top:10px" data-act="toast" data-msg="'+esc(s.action_label+' → '+s.title)+'">'+esc(s.action_label)+'</button></div>';
+  }).join('');
+
+  var apList=ap.map(function(x){
+    var rc=x.risk==='med'?'#eab308':'#22c55e';
+    return '<div class="mini"><div class="spaced"><span style="font-size:12px;font-weight:500">'+esc(x.title)+'</span>'+
+      '<span class="pill" style="color:'+rc+';background:'+rc+'1f">'+x.risk+'</span></div>'+
+      '<div class="small mut" style="margin-top:2px;line-height:1.3">'+esc(x.summary)+'</div>'+
+      '<div class="xs mut" style="margin-top:4px">→ '+esc(x.target)+'</div>'+
+      '<div class="row" style="gap:6px;margin-top:8px">'+
+      '<button class="btn-acc" data-act="toast" data-msg="'+esc('Approved: '+x.title)+'">Approve</button>'+
+      '<button class="btn-ghost" data-act="toast" data-msg="'+esc('Dismissed: '+x.title)+'">Skip</button></div></div>';
+  }).join('');
+
+  var tdList=td.map(function(e){
+    return '<div class="mini row"><span style="width:4px;align-self:stretch;border-radius:999px;background:'+(ACTION_SPINE[e.kind]||'#3b82f6')+'"></span>'+
+      '<span class="small mut tnum" style="width:62px;flex:0 0 auto">'+e.time+'</span>'+
+      '<div><div style="font-size:12px">'+esc(e.title)+'</div><div class="xs mut">'+esc(e.where)+'</div></div></div>';
+  }).join('');
+
+  var actChips=Object.keys(ACTION_SPINE).filter(function(k){return byA[k]}).map(function(k){
+    return '<span class="pill" style="color:'+ACTION_SPINE[k]+';background:'+ACTION_SPINE[k]+'1f">● '+ACTION_LABEL[k]+' '+byA[k]+'</span>';
+  }).join(' ');
+  var statChips=Object.keys(byS).map(function(k){
+    return '<span class="pill" style="border:1px solid var(--line);color:var(--mut)"><span class="dot" style="background:'+STATUS[k].dot+'"></span> '+STATUS[k].label+' '+byS[k]+'</span>';
+  }).join(' ');
+
+  var ibList=ib.map(function(i){
+    var src=i.source==='gmail'?['mail','#f87171','#ea433520']:['dsc','#a5b4fc','#5865f220'];
+    return '<div class="mini row" style="align-items:flex-start">'+
+      '<span class="xs" style="padding:1px 4px;border-radius:4px;text-transform:uppercase;color:'+src[1]+';background:'+src[2]+'">'+src[0]+'</span>'+
+      '<div style="min-width:0;flex:1"><div class="row" style="gap:4px">'+(i.unread?'<span class="dot" style="background:'+a+'"></span>':'')+
+      '<span style="font-size:12px;font-weight:500">'+esc(i.from)+'</span><span class="xs mut" style="margin-left:auto">'+i.ts+'</span></div>'+
+      '<div class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(i.subject)+'</div>'+
+      '<div class="xs mut" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(i.snippet)+'</div></div></div>';
+  }).join('');
+
+  var bars=u.by_day.map(function(d){
+    return '<div class="b"><div class="fill" style="height:'+Math.max(8,d.tokens/1.51e6*44)+'px;background:'+a+'66"></div><span class="barlabel">'+d.day+'</span></div>';
+  }).join('');
+
+  var memList=mem.map(function(m){
+    return '<div class="row" style="align-items:flex-start;gap:8px;font-size:11px;margin-bottom:6px">'+
+      '<span class="xs" style="padding:1px 4px;border-radius:4px;background:var(--ink-700);color:var(--mut);flex:0 0 auto">'+esc(m.tag)+'</span>'+
+      '<span style="color:#cbd2dd;line-height:1.3">'+esc(m.text)+'</span><span class="xs mut" style="margin-left:auto;flex:0 0 auto">'+m.ts+'</span></div>';
+  }).join('');
+
+  return '<div class="grid">'+
+    '<section class="hero"><div class="spaced" style="margin-bottom:12px"><div class="row" style="gap:8px">'+
+      '<span class="dot" style="background:'+a+';animation:pulse 2s infinite"></span>'+
+      '<span style="font-size:14px;font-weight:600">Suggested next steps</span>'+
+      '<span class="xs mut">agent-generated · '+sc+'</span></div><span class="xs mut">refreshed just now</span></div>'+
+      '<div class="sug-grid">'+sugCards+'</div></section>'+
+
+    '<div class="col-4"><div class="tile"><div class="head"><h3>Approvals</h3><span class="pill" style="color:'+a+';background:'+a+'1f">'+ap.length+' pending</span></div><div class="list" style="margin-top:12px">'+apList+'</div></div></div>'+
+
+    '<div class="col-4 half"><div class="tile"><h3>Today</h3><div class="list">'+tdList+'</div></div></div>'+
+
+    '<div class="col-4 half"><div class="tile"><div class="head"><h3>Tasks at a glance</h3><button class="xs mut" data-view="tasks">open →</button></div>'+
+      '<div class="row" style="gap:16px;align-items:baseline;margin:12px 0"><div><div style="font-size:24px;font-weight:700" class="tnum">'+open.length+'</div><div class="xs mut">open</div></div>'+
+      '<div><div style="font-size:24px;font-weight:700;color:'+a+'" class="tnum">'+mine+'</div><div class="xs mut">on me</div></div></div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'+actChips+'</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px">'+statChips+'</div></div></div>'+
+
+    '<div class="col-4 half"><div class="tile"><div class="head"><h3>Inbox</h3><span class="pill" style="color:'+a+';background:'+a+'1f">'+ib.filter(function(i){return i.unread}).length+' unread</span></div><div class="list" style="margin-top:12px">'+ibList+'</div></div></div>'+
+
+    '<div class="col-4 half"><div class="tile"><div class="head"><h3>Agent · usage</h3><button class="xs mut" data-view="cockpit">cockpit →</button></div>'+
+      '<div class="spaced" style="margin:10px 0 8px"><span style="font-size:12px">'+u.plan+'</span><span class="xs mut">resets '+u.window_resets_in+'</span></div>'+
+      '<div class="meter"><div class="fill" style="width:'+u.plan_usage_pct+'%"></div></div><div class="xs mut" style="margin-bottom:12px">'+u.plan_usage_pct+'% of window used</div>'+
+      '<div class="bars">'+bars+'</div><div class="xs mut tnum" style="margin-top:8px">Today '+fmtTok(u.tokens_today)+' · Week '+fmtTok(u.tokens_week)+' tokens</div></div></div>'+
+
+    '<div class="col-4 half"><div class="tile"><h3>Memory · quick capture</h3>'+
+      '<form data-cap="1" class="row" style="gap:6px;margin-bottom:10px"><input class="field" name="cap" placeholder="Capture a thought…" style="flex:1"><button class="btn-acc" style="width:auto;padding:6px 12px">+</button></form>'+memList+'</div></div>'+
+
+    '<div class="col-8"><div class="tile"><div class="head"><h3>Console</h3><span class="xs mut">always at the bottom ↓</span></div>'+
+      '<div class="small mut">Ask the agent anything, or use the mic. Try: <span style="color:#cbd2dd">"what needs me today?"</span>, <span style="color:#cbd2dd">"draft a reply to the GC"</span>, <span style="color:#cbd2dd">"add task: order site signage".</span></div></div></div>'+
+  '</div>';
 }
 
-function Tile({title, action, children, className=''}){
-  return (
-    <section className={`bg-ink-900 border border-line rounded-2xl shadow-tile p-4 flex flex-col min-h-0 ${className}`}>
-      <header className="flex items-center justify-between mb-3">
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mut">{title}</h3>
-        {action}
-      </header>
-      <div className="flex-1 min-h-0">{children}</div>
-    </section>
-  );
-}
-
-function Pill({children, color, soft=true}){
-  return <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium tnum"
-    style={{color, background: soft? color+'1f':'transparent', border:`1px solid ${color}40`}}>{children}</span>;
-}
-
-/* ============================ DASHBOARD ============================ */
-function Dashboard({scope, accent, go, toast}){
-  const sg = MOCK.suggestions[scope], ap = MOCK.approvals[scope], td = MOCK.today[scope];
-  const ib = MOCK.inbox[scope], mem = MOCK.memory[scope], tasks = MOCK.tasks[scope], u = MOCK.usage;
-  const counts = useMemo(()=>{
-    const open = tasks.filter(t=>t.status!=='completed');
-    const byAction={}, byStatus={};
-    tasks.forEach(t=>{byAction[t.action]=(byAction[t.action]||0)+1; byStatus[t.status]=(byStatus[t.status]||0)+1;});
-    return {open:open.length, mine:open.filter(t=>t.ball_in_court==='Me').length, byAction, byStatus};
-  },[tasks]);
-  const [cap,setCap]=useState('');
-
-  return (
-    <div className="grid gap-3 fade" style={{gridTemplateColumns:'repeat(12,minmax(0,1fr))'}}>
-      {/* HERO */}
-      <section className="col-span-12 lg:col-span-8 bg-gradient-to-br from-ink-850 to-ink-900 border border-line rounded-2xl shadow-tile p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full animate-pulse" style={{background:accent}}></span>
-            <h2 className="text-sm font-semibold">Suggested next steps</h2>
-            <span className="text-[10px] text-mut">agent-generated · {scope}</span>
-          </div>
-          <span className="text-[10px] text-mut">refreshed just now</span>
-        </div>
-        <div className="grid sm:grid-cols-2 gap-2.5">
-          {sg.map(s=>(
-            <div key={s.id} className="group bg-ink-850 border border-line rounded-xl p-3 hover:border-ink-500 transition">
-              <div className="flex items-start gap-2">
-                <span className="mt-1 w-1.5 h-1.5 rounded-full shrink-0" style={{background:URG[s.urgency]}}></span>
-                <div className="min-w-0">
-                  <div className="text-[13px] font-medium leading-snug">{s.title}</div>
-                  <div className="text-[11px] text-mut mt-0.5 leading-snug">{s.rationale}</div>
-                </div>
-              </div>
-              <button onClick={()=>toast(`${s.action_label} → ${s.title}`)}
-                className="mt-2.5 w-full text-[11px] font-semibold py-1.5 rounded-lg text-ink-950 transition active:scale-[.98]"
-                style={{background:accent}}>{s.action_label}</button>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* APPROVALS */}
-      <div className="col-span-12 lg:col-span-4">
-        <Tile title="Approvals" action={<Pill color={accent}>{ap.length} pending</Pill>}>
-          <div className="space-y-2">
-            {ap.map(a=>(
-              <div key={a.id} className="bg-ink-850 border border-line rounded-xl p-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-medium truncate">{a.title}</span>
-                  <Pill color={a.risk==='med'?'#eab308':'#22c55e'}>{a.risk}</Pill>
-                </div>
-                <div className="text-[11px] text-mut mt-0.5 leading-snug">{a.summary}</div>
-                <div className="text-[10px] text-mut mt-1">→ {a.target}</div>
-                <div className="flex gap-1.5 mt-2">
-                  <button onClick={()=>toast(`Approved (mock): ${a.title}`)}
-                    className="flex-1 text-[11px] font-semibold py-1 rounded-lg text-ink-950" style={{background:accent}}>Approve</button>
-                  <button onClick={()=>toast(`Dismissed: ${a.title}`)}
-                    className="px-2 text-[11px] py-1 rounded-lg border border-line text-mut hover:text-white">Skip</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Tile>
-      </div>
-
-      {/* TODAY */}
-      <div className="col-span-12 sm:col-span-6 lg:col-span-4">
-        <Tile title="Today">
-          <div className="space-y-1.5">
-            {td.map(e=>(
-              <div key={e.id} className="flex items-center gap-2.5 bg-ink-850 border border-line rounded-lg px-2.5 py-2">
-                <span className="w-1.5 self-stretch rounded-full" style={{background:ACTION_SPINE[e.kind]}}></span>
-                <span className="text-[11px] text-mut tnum w-16 shrink-0">{e.time}</span>
-                <div className="min-w-0"><div className="text-[12px] truncate">{e.title}</div>
-                  <div className="text-[10px] text-mut">{e.where}</div></div>
-              </div>
-            ))}
-          </div>
-        </Tile>
-      </div>
-
-      {/* TASKS AT A GLANCE */}
-      <div className="col-span-12 sm:col-span-6 lg:col-span-4">
-        <Tile title="Tasks at a glance" action={<button onClick={()=>go('tasks')} className="text-[10px] text-mut hover:text-white">open →</button>}>
-          <div className="flex items-baseline gap-3 mb-3">
-            <div><div className="text-2xl font-bold tnum">{counts.open}</div><div className="text-[10px] text-mut">open</div></div>
-            <div><div className="text-2xl font-bold tnum" style={{color:accent}}>{counts.mine}</div><div className="text-[10px] text-mut">on me</div></div>
-          </div>
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {Object.keys(ACTION_SPINE).map(k=>counts.byAction[k] && (
-              <span key={k} className="text-[10px] px-1.5 py-0.5 rounded-md flex items-center gap-1"
-                style={{background:ACTION_SPINE[k]+'1f',color:ACTION_SPINE[k]}}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{background:ACTION_SPINE[k]}}></span>
-                {ACTION_LABEL[k]} {counts.byAction[k]}</span>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {Object.keys(counts.byStatus).map(k=>(
-              <span key={k} className="text-[10px] px-1.5 py-0.5 rounded-md border border-line text-mut flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full" style={{background:STATUS[k].dot}}></span>
-                {STATUS[k].label} {counts.byStatus[k]}</span>
-            ))}
-          </div>
-        </Tile>
-      </div>
-
-      {/* INBOX */}
-      <div className="col-span-12 sm:col-span-6 lg:col-span-4">
-        <Tile title="Inbox" action={<Pill color={accent}>{ib.filter(i=>i.unread).length} unread</Pill>}>
-          <div className="space-y-1.5">
-            {ib.map(i=>(
-              <div key={i.id} className="flex items-start gap-2 bg-ink-850 border border-line rounded-lg px-2.5 py-2">
-                <span className="text-[9px] mt-0.5 px-1 py-0.5 rounded uppercase tracking-wide"
-                  style={{background:i.source==='gmail'?'#ea433520':'#5865f220',color:i.source==='gmail'?'#f87171':'#a5b4fc'}}>{i.source==='gmail'?'mail':'dsc'}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1">
-                    {i.unread && <span className="w-1.5 h-1.5 rounded-full" style={{background:accent}}></span>}
-                    <span className="text-[12px] font-medium truncate">{i.from}</span>
-                    <span className="text-[10px] text-mut ml-auto">{i.ts}</span>
-                  </div>
-                  <div className="text-[11px] truncate">{i.subject}</div>
-                  <div className="text-[10px] text-mut truncate">{i.snippet}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Tile>
-      </div>
-
-      {/* AGENT / USAGE */}
-      <div className="col-span-12 sm:col-span-6 lg:col-span-4">
-        <Tile title="Agent · usage" action={<button onClick={()=>go('cockpit')} className="text-[10px] text-mut hover:text-white">cockpit →</button>}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[12px]">{u.plan}</span>
-            <span className="text-[10px] text-mut">resets {u.window_resets_in}</span>
-          </div>
-          <div className="h-2 rounded-full bg-ink-700 overflow-hidden mb-1">
-            <div className="h-full rounded-full" style={{width:u.plan_usage_pct+'%',background:accent}}></div>
-          </div>
-          <div className="text-[10px] text-mut mb-3">{u.plan_usage_pct}% of window used</div>
-          <div className="flex items-end gap-1 h-12">
-            {u.by_day.map(d=>(
-              <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
-                <div className="w-full rounded-t" style={{height:Math.max(8,d.tokens/1.51e6*44),background:accent+'66'}}></div>
-                <span className="text-[8px] text-mut">{d.day}</span>
-              </div>
-            ))}
-          </div>
-          <div className="text-[10px] text-mut mt-2 tnum">Today {fmtTok(u.tokens_today)} · Week {fmtTok(u.tokens_week)} tokens</div>
-        </Tile>
-      </div>
-
-      {/* MEMORY + QUICK CAPTURE */}
-      <div className="col-span-12 sm:col-span-6 lg:col-span-4">
-        <Tile title="Memory · quick capture">
-          <form onSubmit={e=>{e.preventDefault(); if(cap.trim()){toast(`Captured: ${cap}`); setCap('');}}} className="flex gap-1.5 mb-2.5">
-            <input value={cap} onChange={e=>setCap(e.target.value)} placeholder="Capture a thought…"
-              className="flex-1 bg-ink-850 border border-line rounded-lg px-2.5 py-1.5 text-[12px] outline-none focus:border-ink-500"/>
-            <button className="px-3 rounded-lg text-[12px] font-semibold text-ink-950" style={{background:accent}}>+</button>
-          </form>
-          <div className="space-y-1.5">
-            {mem.map(m=>(
-              <div key={m.id} className="flex items-start gap-2 text-[11px]">
-                <span className="text-[9px] px-1 py-0.5 rounded bg-ink-700 text-mut shrink-0 mt-0.5">{m.tag}</span>
-                <span className="text-gray-300 leading-snug">{m.text}</span>
-                <span className="text-[10px] text-mut ml-auto shrink-0">{m.ts}</span>
-              </div>
-            ))}
-          </div>
-        </Tile>
-      </div>
-
-      {/* CONSOLE shortcut tile */}
-      <div className="col-span-12 lg:col-span-8">
-        <Tile title="Console" action={<span className="text-[10px] text-mut">always at the bottom ↓</span>}>
-          <div className="text-[12px] text-mut">Ask the agent anything, or use the mic. Try:
-            <span className="text-gray-300"> "what needs me today?"</span>,
-            <span className="text-gray-300"> "draft a reply to the GC"</span>,
-            <span className="text-gray-300"> "add task: order site signage".</span>
-          </div>
-        </Tile>
-      </div>
-    </div>
-  );
-}
-
-/* ============================ TASKS ============================ */
-const FILTERS = [['all','All'],['mine','Mine'],['action','Action'],['wait','Wait'],['hold','Hold'],['read','Read'],['event','Event']];
-function Tasks({scope, accent, toast}){
-  const [filter,setFilter]=useState('all');
-  const [extra,setExtra]=useState([]);
-  const [desc,setDesc]=useState(''); const [act,setAct]=useState('action');
-  const all = [...extra, ...MOCK.tasks[scope]];
-  const rows = all.filter(t=>{
-    if(filter==='all') return true;
-    if(filter==='mine') return t.ball_in_court==='Me' && t.status!=='completed';
-    return t.action===filter;
+/* ---------- tasks ---------- */
+function tasks(){
+  var sc=S.scope,a=accent();
+  var all=S.extra[sc].concat(MOCK.tasks[sc]);
+  var rows=all.filter(function(t){
+    if(S.filter==='all')return true;
+    if(S.filter==='mine')return t.ball_in_court==='Me'&&t.status!=='completed';
+    return t.action===S.filter;
   });
-  function add(e){e.preventDefault(); if(!desc.trim())return;
-    setExtra([{id:'new-'+Date.now(),bang:'',description:desc,start:'06/25',followup:'',due:'',owner:'Gavin',ball_in_court:'Me',category:'Inbox',subcategory:'',action:act,status:'not_started'},...extra]);
-    toast(`Added (mock write → sheet): ${desc}`); setDesc('');
-  }
-  return (
-    <div className="fade">
-      {/* quick add */}
-      <form onSubmit={add} className="flex flex-wrap gap-1.5 mb-3">
-        <input value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Quick-add a task… (writes via the sheet adapter)"
-          className="flex-1 min-w-[200px] bg-ink-900 border border-line rounded-lg px-3 py-2 text-[13px] outline-none focus:border-ink-500"/>
-        <select value={act} onChange={e=>setAct(e.target.value)}
-          className="bg-ink-900 border border-line rounded-lg px-2 py-2 text-[12px] outline-none">
-          {Object.keys(ACTION_LABEL).map(k=><option key={k} value={k}>{ACTION_LABEL[k]}</option>)}
-        </select>
-        <button className="px-4 rounded-lg text-[13px] font-semibold text-ink-950" style={{background:accent}}>Add</button>
-      </form>
-      {/* filter tabs */}
-      <div className="flex flex-wrap gap-1.5 mb-3">
-        {FILTERS.map(([k,l])=>(
-          <button key={k} onClick={()=>setFilter(k)}
-            className={`text-[12px] px-3 py-1 rounded-full border transition ${filter===k?'text-ink-950 font-semibold':'text-mut border-line hover:text-white'}`}
-            style={filter===k?{background:accent,borderColor:accent}:{}}>
-            {l}{k!=='all'&&k!=='mine'?<span className="ml-1" style={{color:filter===k?'#000':ACTION_SPINE[k]}}>●</span>:''}
-          </button>
-        ))}
-        <span className="ml-auto text-[11px] text-mut self-center">{rows.length} shown</span>
-      </div>
+  var opts=Object.keys(ACTION_LABEL).map(function(k){return '<option value="'+k+'">'+ACTION_LABEL[k]+'</option>'}).join('');
+  var chips=FILTERS.map(function(f){
+    var on=S.filter===f[0]; var extra=(f[0]!=='all'&&f[0]!=='mine')?' <span style="color:'+(on?'#000':ACTION_SPINE[f[0]])+'">●</span>':'';
+    return '<button class="chip '+(on?'on':'')+'" data-filter="'+f[0]+'" style="'+(on?'background:'+a+';border-color:'+a:'')+'">'+f[1]+extra+'</button>';
+  }).join('');
+  var head=['!','Description','Start','Follow-up','Due','Owner','Ball in Court','Category','Subcategory','Action','Status'].map(function(x){return '<th>'+x+'</th>'}).join('');
+  var body=rows.map(function(t){
+    var bic=t.ball_in_court==='Me'?'<b style="color:'+a+'">Me</b>':'<span class="mut">'+esc(t.ball_in_court)+'</span>';
+    return '<tr><td class="spine" style="--c:'+ACTION_SPINE[t.action]+';padding-left:0"><span style="padding-left:8px;font-weight:700;color:#ef4444">'+esc(t.bang)+'</span></td>'+
+      '<td style="max-width:280px"><span class="'+(t.status==='completed'?'strike':'')+'">'+esc(t.description)+'</span></td>'+
+      '<td class="mut tnum">'+esc(t.start)+'</td><td class="mut tnum">'+esc(t.followup||'—')+'</td><td class="tnum">'+esc(t.due||'—')+'</td>'+
+      '<td class="mut">'+esc(t.owner)+'</td><td>'+bic+'</td><td class="mut">'+esc(t.category)+'</td><td class="mut">'+esc(t.subcategory||'—')+'</td>'+
+      '<td><span style="color:'+ACTION_SPINE[t.action]+'"><span class="dot" style="background:'+ACTION_SPINE[t.action]+'"></span> '+ACTION_LABEL[t.action]+'</span></td>'+
+      '<td><span class="mut"><span class="dot" style="background:'+STATUS[t.status].dot+'"></span> '+STATUS[t.status].label+'</span></td></tr>';
+  }).join('');
+  var cards=rows.map(function(t){
+    var bic=t.ball_in_court==='Me'?'<b style="color:'+a+'">Me</b>':'<span class="mut">'+esc(t.ball_in_court)+'</span>';
+    return '<div class="card spine" style="--c:'+ACTION_SPINE[t.action]+';margin-bottom:8px">'+
+      '<div class="row" style="gap:6px">'+(t.bang?'<b style="color:#ef4444">!</b>':'')+'<span style="font-size:13px;font-weight:500" class="'+(t.status==='completed'?'strike':'')+'">'+esc(t.description)+'</span></div>'+
+      '<div class="xs mut tnum" style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:4px"><span>Due '+esc(t.due||'—')+'</span><span>F/U '+esc(t.followup||'—')+'</span><span>'+esc(t.category)+(t.subcategory?' · '+esc(t.subcategory):'')+'</span></div>'+
+      '<div class="row" style="gap:8px;margin-top:6px"><span class="xs" style="color:'+ACTION_SPINE[t.action]+'"><span class="dot" style="background:'+ACTION_SPINE[t.action]+'"></span> '+ACTION_LABEL[t.action]+'</span>'+
+      '<span class="xs mut"><span class="dot" style="background:'+STATUS[t.status].dot+'"></span> '+STATUS[t.status].label+'</span><span class="xs" style="margin-left:auto">'+bic+'</span></div></div>';
+  }).join('');
 
-      {/* desktop table */}
-      <div className="hidden md:block bg-ink-900 border border-line rounded-2xl overflow-hidden">
-        <table className="w-full text-[12px]">
-          <thead><tr className="text-[10px] uppercase tracking-wide text-mut border-b border-line">
-            {['!','Description','Start','Follow-up','Due','Owner','Ball in Court','Category','Subcategory','Action','Status'].map(h=>
-              <th key={h} className="text-left font-medium px-2.5 py-2 whitespace-nowrap">{h}</th>)}
-          </tr></thead>
-          <tbody>
-            {rows.map(t=>(
-              <tr key={t.id} className="border-b border-ink-850 hover:bg-ink-850/60 transition relative">
-                <td className="pl-0 pr-1 py-2" style={{borderLeft:`4px solid ${ACTION_SPINE[t.action]}`}}>
-                  <span className="pl-2 font-bold" style={{color:'#ef4444'}}>{t.bang}</span></td>
-                <td className="px-2.5 py-2 max-w-[280px]"><span className={t.status==='completed'?'line-through text-mut':''}>{t.description}</span></td>
-                <td className="px-2.5 py-2 text-mut tnum">{t.start}</td>
-                <td className="px-2.5 py-2 text-mut tnum">{t.followup||'—'}</td>
-                <td className="px-2.5 py-2 tnum">{t.due||'—'}</td>
-                <td className="px-2.5 py-2 text-mut">{t.owner}</td>
-                <td className="px-2.5 py-2">{t.ball_in_court==='Me'
-                  ? <span className="font-semibold" style={{color:accent}}>Me</span>
-                  : <span className="text-mut">{t.ball_in_court}</span>}</td>
-                <td className="px-2.5 py-2 text-mut">{t.category}</td>
-                <td className="px-2.5 py-2 text-mut">{t.subcategory||'—'}</td>
-                <td className="px-2.5 py-2"><span className="flex items-center gap-1" style={{color:ACTION_SPINE[t.action]}}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{background:ACTION_SPINE[t.action]}}></span>{ACTION_LABEL[t.action]}</span></td>
-                <td className="px-2.5 py-2"><span className="flex items-center gap-1 text-mut">
-                  <span className="w-1.5 h-1.5 rounded-full" style={{background:STATUS[t.status].dot}}></span>{STATUS[t.status].label}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* mobile cards */}
-      <div className="md:hidden space-y-2">
-        {rows.map(t=>(
-          <div key={t.id} className="bg-ink-900 border border-line rounded-xl p-3 flex gap-2.5"
-            style={{borderLeft:`4px solid ${ACTION_SPINE[t.action]}`}}>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                {t.bang && <span className="font-bold text-red-500">!</span>}
-                <span className={`text-[13px] font-medium ${t.status==='completed'?'line-through text-mut':''}`}>{t.description}</span>
-              </div>
-              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-mut tnum">
-                <span>Due {t.due||'—'}</span><span>F/U {t.followup||'—'}</span>
-                <span>{t.category}{t.subcategory?' · '+t.subcategory:''}</span>
-              </div>
-              <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-[10px] flex items-center gap-1" style={{color:ACTION_SPINE[t.action]}}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{background:ACTION_SPINE[t.action]}}></span>{ACTION_LABEL[t.action]}</span>
-                <span className="text-[10px] flex items-center gap-1 text-mut">
-                  <span className="w-1.5 h-1.5 rounded-full" style={{background:STATUS[t.status].dot}}></span>{STATUS[t.status].label}</span>
-                <span className="text-[10px] ml-auto">{t.ball_in_court==='Me'
-                  ? <b style={{color:accent}}>Me</b> : <span className="text-mut">{t.ball_in_court}</span>}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return '<div>'+
+    '<form data-add="1" class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:12px">'+
+      '<input class="field" name="desc" placeholder="Quick-add a task… (writes via the sheet adapter)" style="flex:1;min-width:200px;padding:8px 12px;font-size:13px">'+
+      '<select class="field" name="act" style="padding:8px">'+opts+'</select>'+
+      '<button class="btn-acc" style="width:auto;padding:8px 16px;font-size:13px">Add</button></form>'+
+    '<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:12px">'+chips+'<span class="small mut" style="margin-left:auto;align-self:center">'+rows.length+' shown</span></div>'+
+    '<div class="tasktable-wrap"><table><thead><tr>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div>'+
+    '<div class="taskcards">'+cards+'</div></div>';
 }
 
-/* ============================ COCKPIT ============================ */
-const STATUS_COLOR = { ok:'#22c55e', mock:'#38bdf8', stubbed:'#eab308', blocked:'#ef4444' };
-function Cockpit({accent}){
-  const u = MOCK.usage;
-  return (
-    <div className="grid gap-3 fade" style={{gridTemplateColumns:'repeat(12,minmax(0,1fr))'}}>
-      <div className="col-span-12 lg:col-span-6">
-        <Tile title="Connections">
-          <div className="space-y-1.5">
-            {MOCK.connections.map(c=>(
-              <div key={c.id} className="flex items-center gap-2.5 bg-ink-850 border border-line rounded-lg px-2.5 py-2">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{background:STATUS_COLOR[c.status]}}></span>
-                <div className="min-w-0 flex-1"><div className="text-[12px] font-medium truncate">{c.name}</div>
-                  <div className="text-[10px] text-mut truncate">{c.detail}</div></div>
-                <div className="text-right"><Pill color={STATUS_COLOR[c.status]}>{c.status}</Pill>
-                  <div className="text-[9px] text-mut mt-0.5">{c.note}</div></div>
-              </div>
-            ))}
-          </div>
-        </Tile>
-      </div>
-      <div className="col-span-12 lg:col-span-6">
-        <Tile title="Scheduled jobs" action={<span className="text-[10px] text-mut">Hermes cron</span>}>
-          <div className="space-y-1.5">
-            {MOCK.jobs.map(j=>(
-              <div key={j.id} className="flex items-center gap-2.5 bg-ink-850 border border-line rounded-lg px-2.5 py-2">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{background:STATUS_COLOR[j.status]}}></span>
-                <div className="min-w-0 flex-1"><div className="text-[12px] font-medium truncate">{j.name}</div>
-                  <div className="text-[10px] text-mut tnum">{j.cron} · last {j.last}</div></div>
-                <span className="text-[10px] text-mut tnum">{j.next}</span>
-              </div>
-            ))}
-          </div>
-        </Tile>
-      </div>
-      <div className="col-span-12 lg:col-span-5">
-        <Tile title="Skills inventory">
-          <div className="grid sm:grid-cols-2 gap-1.5">
-            {MOCK.skills.map(s=>(
-              <div key={s.id} className="bg-ink-850 border border-line rounded-lg p-2.5">
-                <div className="flex items-center justify-between"><span className="text-[12px] font-medium">{s.name}</span>
-                  <span className="text-[9px] px-1 rounded bg-ink-700 text-mut">{s.scope}</span></div>
-                <div className="text-[10px] text-mut mt-0.5 leading-snug">{s.desc}</div>
-              </div>
-            ))}
-          </div>
-        </Tile>
-      </div>
-      <div className="col-span-12 lg:col-span-7">
-        <Tile title="Usage ledger" action={<Pill color={accent}>{u.plan}</Pill>}>
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            <div className="bg-ink-850 border border-line rounded-lg p-2.5"><div className="text-[10px] text-mut">Window used</div>
-              <div className="text-lg font-bold tnum" style={{color:accent}}>{u.plan_usage_pct}%</div></div>
-            <div className="bg-ink-850 border border-line rounded-lg p-2.5"><div className="text-[10px] text-mut">Today</div>
-              <div className="text-lg font-bold tnum">{fmtTok(u.tokens_today)}</div></div>
-            <div className="bg-ink-850 border border-line rounded-lg p-2.5"><div className="text-[10px] text-mut">Week</div>
-              <div className="text-lg font-bold tnum">{fmtTok(u.tokens_week)}</div></div>
-          </div>
-          <table className="w-full text-[11px]">
-            <thead><tr className="text-[9px] uppercase tracking-wide text-mut border-b border-line">
-              {['Time','Agent','Model','Tokens','Scope'].map(h=><th key={h} className="text-left font-medium py-1.5">{h}</th>)}</tr></thead>
-            <tbody>{u.ledger.map(l=>(
-              <tr key={l.id} className="border-b border-ink-850">
-                <td className="py-1.5 text-mut tnum">{l.ts}</td><td className="py-1.5">{l.agent}</td>
-                <td className="py-1.5 text-mut">{l.model}</td><td className="py-1.5 tnum">{fmtTok(l.tokens)}</td>
-                <td className="py-1.5"><span className="text-[9px] px-1 rounded bg-ink-700 text-mut">{l.scope}</span></td>
-              </tr>))}</tbody>
-          </table>
-        </Tile>
-      </div>
-    </div>
-  );
+/* ---------- cockpit ---------- */
+function cockpit(){
+  var a=accent(),u=MOCK.usage;
+  var conns=MOCK.connections.map(function(c){
+    return '<div class="mini row"><span class="dot2" style="background:'+CONN[c.status]+'"></span>'+
+      '<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:500">'+esc(c.name)+'</div><div class="xs mut">'+esc(c.detail)+'</div></div>'+
+      '<div style="text-align:right"><span class="pill" style="color:'+CONN[c.status]+';background:'+CONN[c.status]+'1f">'+c.status+'</span><div class="xs mut" style="margin-top:2px">'+esc(c.note)+'</div></div></div>';
+  }).join('');
+  var jobs=MOCK.jobs.map(function(j){
+    return '<div class="mini row"><span class="dot2" style="background:'+CONN[j.status]+'"></span>'+
+      '<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:500">'+esc(j.name)+'</div><div class="xs mut tnum">'+esc(j.cron)+' · last '+j.last+'</div></div>'+
+      '<span class="xs mut tnum">'+j.next+'</span></div>';
+  }).join('');
+  var skills=MOCK.skills.map(function(s){
+    return '<div class="mini"><div class="spaced"><span style="font-size:12px;font-weight:500">'+esc(s.name)+'</span><span class="xs" style="padding:0 4px;border-radius:4px;background:var(--ink-700);color:var(--mut)">'+s.scope+'</span></div><div class="xs mut" style="margin-top:2px;line-height:1.3">'+esc(s.desc)+'</div></div>';
+  }).join('');
+  var ledger=u.ledger.map(function(l){
+    return '<tr><td class="mut tnum">'+l.ts+'</td><td>'+esc(l.agent)+'</td><td class="mut">'+l.model+'</td><td class="tnum">'+fmtTok(l.tokens)+'</td><td><span class="xs" style="padding:0 4px;border-radius:4px;background:var(--ink-700);color:var(--mut)">'+l.scope+'</span></td></tr>';
+  }).join('');
+  function stat(l,v,c){return '<div class="mini"><div class="xs mut">'+l+'</div><div style="font-size:18px;font-weight:700'+(c?';color:'+c:'')+'" class="tnum">'+v+'</div></div>'}
+
+  return '<div class="grid">'+
+    '<div class="col-6"><div class="tile"><h3>Connections</h3><div class="list">'+conns+'</div></div></div>'+
+    '<div class="col-6"><div class="tile"><div class="head"><h3>Scheduled jobs</h3><span class="xs mut">Hermes cron</span></div><div class="list" style="margin-top:12px">'+jobs+'</div></div></div>'+
+    '<div class="col-5"><div class="tile"><h3>Skills inventory</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'+skills+'</div></div></div>'+
+    '<div class="col-7"><div class="tile"><div class="head"><h3>Usage ledger</h3><span class="pill" style="color:'+a+';background:'+a+'1f">'+u.plan+'</span></div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0">'+stat('Window used',u.plan_usage_pct+'%',a)+stat('Today',fmtTok(u.tokens_today))+stat('Week',fmtTok(u.tokens_week))+'</div>'+
+      '<table><thead><tr><th>Time</th><th>Agent</th><th>Model</th><th>Tokens</th><th>Scope</th></tr></thead><tbody>'+ledger+'</tbody></table></div></div>'+
+  '</div>';
 }
 
-/* ============================ CONSOLE ============================ */
-function Console({accent, log, onSend}){
-  const [v,setV]=useState(''); const end=useRef();
-  useEffect(()=>{ end.current && end.current.scrollIntoView({behavior:'smooth'}); },[log]);
-  return (
-    <div className="border-t border-line bg-ink-950/90 backdrop-blur px-3 sm:px-5 py-2">
-      {log.length>0 && (
-        <div className="max-h-28 overflow-y-auto mb-1.5 space-y-1">
-          {log.map((m,i)=>(
-            <div key={i} className="text-[11px] flex gap-2">
-              <span className="shrink-0" style={{color:m.who==='you'?accent:'#8a94a6'}}>{m.who==='you'?'you':'WOM'}</span>
-              <span className="text-gray-300">{m.text}</span>
-            </div>
-          ))}
-          <div ref={end}/>
-        </div>
-      )}
-      <form onSubmit={e=>{e.preventDefault(); if(v.trim()){onSend(v); setV('');}}} className="flex items-center gap-2">
-        <span className="text-mut text-sm">›</span>
-        <input value={v} onChange={e=>setV(e.target.value)} placeholder="Ask Wise Old Man…  (persistent console — every view)"
-          className="flex-1 bg-transparent outline-none text-[13px] py-1.5"/>
-        <button type="button" title="Voice (placeholder)" onClick={()=>onSend('🎙️ (voice input placeholder)')}
-          className="w-8 h-8 grid place-items-center rounded-lg border border-line text-mut hover:text-white">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4"/></svg>
-        </button>
-        <button className="px-3 h-8 rounded-lg text-[12px] font-semibold text-ink-950" style={{background:accent}}>Send</button>
-      </form>
-    </div>
-  );
+/* ---------- console + toast ---------- */
+function consoleBar(){
+  var a=accent();
+  var log=S.log.length?'<div class="log">'+S.log.map(function(m){
+    return '<div class="line"><span style="flex:0 0 auto;color:'+(m.who==='you'?a:'#8a94a6')+'">'+(m.who==='you'?'you':'WOM')+'</span><span style="color:#cbd2dd">'+esc(m.text)+'</span></div>';
+  }).join('')+'</div>':'';
+  return '<div class="console">'+log+'<form data-console="1"><span class="mut">›</span>'+
+    '<input name="msg" placeholder="Ask Wise Old Man…  (persistent console — every view)">'+
+    '<button type="button" class="mic" data-mic="1" title="Voice (placeholder)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4"/></svg></button>'+
+    '<button class="send">Send</button></form></div>';
+}
+function toast(){return '<div class="toast">'+esc(S.toast)+'</div>'}
+
+/* ============================ EVENTS ============================ */
+function wire(){
+  // nav + scope (event delegation handles dynamic content)
+}
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-view]'); if(el){S.view=el.getAttribute('data-view');render();return;}
+  var sc=e.target.closest('[data-scope]'); if(sc){S.scope=sc.getAttribute('data-scope');render();return;}
+  var ft=e.target.closest('[data-filter]'); if(ft){S.filter=ft.getAttribute('data-filter');render();return;}
+  var ac=e.target.closest('[data-act="toast"]'); if(ac){showToast(ac.getAttribute('data-msg'));return;}
+  var mic=e.target.closest('[data-mic]'); if(mic){say('you','🎙️ (voice input placeholder)');sayBot();render();return;}
+});
+document.addEventListener('submit',function(e){
+  var f=e.target;
+  if(f.getAttribute('data-console')){e.preventDefault();var v=f.msg.value.trim();if(v){say('you',v);sayBot();f.reset();render();}return;}
+  if(f.getAttribute('data-cap')){e.preventDefault();var v=f.cap.value.trim();if(v){showToast('Captured: '+v);}f.reset();return;}
+  if(f.getAttribute('data-add')){e.preventDefault();var d=f.desc.value.trim();if(d){
+    S.extra[S.scope].unshift({id:'new-'+Date.now(),bang:'',description:d,start:'06/25',followup:'',due:'',owner:'Gavin',ball_in_court:'Me',category:'Inbox',subcategory:'',action:f.act.value,status:'not_started'});
+    showToast('Added (mock write → sheet): '+d);}f.reset();render();return;}
+});
+function say(who,text){S.log.push({who:who,text:text})}
+function sayBot(){S.log.push({who:'WOM',text:'Got it — in mock mode I only simulate actions. Wire creds (see NEEDS-FROM-YOU.md) to go live.'})}
+var toastTimer;
+function showToast(msg){
+  S.toast=msg; S.log.push({who:'WOM',text:'✓ '+msg+' (mock — nothing left the machine)'}); render();
+  clearTimeout(toastTimer); toastTimer=setTimeout(function(){S.toast=null;render();},2600);
 }
 
-/* ============================ SHELL ============================ */
-const NAV = [['home','Dashboard'],['tasks','Tasks'],['cockpit','Cockpit']];
-function App(){
-  const [scope,setScope]=useState('personal');
-  const [view,setView]=useState('home');
-  const [log,setLog]=useState([]);
-  const [toastMsg,setToastMsg]=useState(null);
-  const accent = scope==='personal'?'#34d399':'#f59e0b';
-
-  function toast(t){ setToastMsg(t); setLog(l=>[...l,{who:'WOM',text:'✓ '+t+' (mock — nothing left the machine)'}]); setTimeout(()=>setToastMsg(null),2600); }
-  function onSend(t){ setLog(l=>[...l,{who:'you',text:t},{who:'WOM',text:'Got it — in mock mode I only simulate actions. Wire creds (see NEEDS-FROM-YOU.md) to go live.'}]); }
-
-  return (
-    <div className="h-full flex flex-col">
-      {/* top bar */}
-      <header className="flex items-center gap-3 px-3 sm:px-5 py-2.5 border-b border-line bg-ink-950/80 backdrop-blur sticky top-0 z-20">
-        <Wordmark accent={accent}/>
-        <nav className="hidden sm:flex items-center gap-1 ml-4">
-          {NAV.map(([k,l])=>(
-            <button key={k} onClick={()=>setView(k)}
-              className={`text-[13px] px-3 py-1.5 rounded-lg transition ${view===k?'bg-ink-800 text-white':'text-mut hover:text-white'}`}>{l}</button>
-          ))}
-        </nav>
-        <div className="ml-auto flex items-center gap-2">
-          {/* scope toggle */}
-          <div className="flex items-center bg-ink-850 border border-line rounded-full p-0.5">
-            {['personal','work'].map(s=>(
-              <button key={s} onClick={()=>setScope(s)}
-                className={`text-[12px] px-3 py-1 rounded-full transition capitalize ${scope===s?'text-ink-950 font-semibold':'text-mut'}`}
-                style={scope===s?{background:s==='personal'?'#34d399':'#f59e0b'}:{}}>{s}</button>
-            ))}
-          </div>
-          <span className="hidden sm:inline text-[10px] px-2 py-1 rounded-md border border-line text-mut">MOCK</span>
-        </div>
-      </header>
-
-      {/* main */}
-      <main className="flex-1 overflow-y-auto px-3 sm:px-5 py-4">
-        {view==='home' && <Dashboard scope={scope} accent={accent} go={setView} toast={toast}/>}
-        {view==='tasks' && <Tasks scope={scope} accent={accent} toast={toast}/>}
-        {view==='cockpit' && <Cockpit accent={accent}/>}
-      </main>
-
-      {/* mobile nav */}
-      <nav className="sm:hidden flex border-t border-line bg-ink-950">
-        {NAV.map(([k,l])=>(
-          <button key={k} onClick={()=>setView(k)}
-            className={`flex-1 py-2 text-[11px] ${view===k?'text-white':'text-mut'}`}
-            style={view===k?{borderTop:`2px solid ${accent}`}:{}}>{l}</button>
-        ))}
-      </nav>
-
-      <Console accent={accent} log={log} onSend={onSend}/>
-
-      {toastMsg && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 bg-ink-800 border border-line rounded-xl px-4 py-2 text-[12px] shadow-tile fade">
-          {toastMsg}
-        </div>
-      )}
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-
-/* register service worker when served over http (PWA installability) */
-if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-  navigator.serviceWorker.register('/preview/sw.js').catch(()=>{});
+/* ============================ BOOT ============================ */
+render();
+if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
+  navigator.serviceWorker.register('/preview/sw.js').catch(function(){});
 }
 </script>
 </body>

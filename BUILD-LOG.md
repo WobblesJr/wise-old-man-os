@@ -51,4 +51,18 @@ Reverse-chronological log of what got built, by an autonomous session.
 - Installed for this machine: fastapi, uvicorn, python-dotenv, openpyxl.
 - HARD LIMIT respected throughout: nothing sent/written/deployed; all effects mocked.
 
+### Fix — preview was a black screen
+- **Cause:** the preview depended on 3 runtime CDNs (React UMD + in-browser Babel
+  + Tailwind Play CDN). Babel-in-browser failed silently in the sandboxed/served
+  context → nothing rendered (confirmed via preview console + DOM inspection).
+- **Fix:** rewrote `preview/index.html` to be **100% dependency-free** — vanilla JS
+  (DOM rendering, event delegation) + embedded CSS design system. No CDNs, no build,
+  works offline / double-click / served. Same screens + design.
+- **Verified in-browser:** renders (7 tiles, topbar, hero); scope toggle flips accent
+  personal #34d399 → work #f59e0b and re-scopes data; Tasks shows 8 rows with correct
+  action spines (red/yellow/green…); console + filters + quick-add functional.
+- Also noted: the machine has **two Pythons** — Anaconda (used by the preview panel)
+  and the WindowsApps 3.8. `run.ps1/.sh` pip-install first, so they self-provision
+  whichever `python` resolves to.
+
 <!-- newest entries go ABOVE this line as work proceeds -->
