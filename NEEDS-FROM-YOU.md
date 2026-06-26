@@ -1,5 +1,9 @@
 # NEEDS-FROM-YOU
 
+> **Provisioning the Hermes agent?** See **`docs/HERMES-SETUP.md`** — the full consolidated
+> checklist (runtime/brain, connectors, skills, cron jobs, control bridge, infra) with a
+> "minimum to go live" ordered path. This file is the per-credential detail.
+
 Everything below is **stubbed** so the build keeps moving. The app runs end-to-end
 on **mock data** right now. Fill these in to flip pieces from mock → live.
 
