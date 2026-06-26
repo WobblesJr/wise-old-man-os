@@ -85,6 +85,27 @@ Notes:
 
 ---
 
+## 6. Auth / login — 🅿️ BACKBURNER (your call)
+Parked for now; proceeding single-user no-login. Captured in `docs/BACKLOG.md`. The one place it
+matters sooner: protecting the agent-control endpoints (#7) once the domain is public.
+
+## 7. Hermes ↔ Claude Code / Cowork control bridge
+**Status:** 🟡 Designed + stubbed. Lets this dashboard dispatch Claude Code + Cowork to work on your
+machine. Full design in `docs/ARCHITECTURE-AGENTS.md`.
+
+**What to provide to go live**
+- The exact command/entrypoint Hermes (in the Ubuntu VM) or a Windows runner uses to invoke
+  **Claude Code** and **Cowork** for a job (+ how task context is passed).
+- Network path from the Ubuntu VM → the Windows FastAPI (host IP:port on the VM network, or the
+  `https://wise-old-man.xyz` tunnel).
+- Confirm "Cowork" = Claude Cowork; does it run on Windows or in the VM?
+- A shared token to auth the control endpoints (so the public domain can't trigger local agents).
+
+**Where it plugs in:** the `delegations` table + `/api/delegations*` endpoints (being built mock);
+the runner side is yours/Hermes. Contract is in the architecture doc.
+
+---
+
 ## Decisions I made for you (so I didn't stall) — flag if any are wrong
 - **Personal⇄Work** swaps both accent color *and* data scope (Personal = Google personal; Work = Limbach DriveBridge mock).
 - **Task sheet column order** taken verbatim from your prompt (see #2). Action→color spine: `action=red, wait=yellow, hold=purple, read=green, event=blue`.
