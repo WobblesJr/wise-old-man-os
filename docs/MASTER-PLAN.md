@@ -161,9 +161,9 @@ This is the fix for the exact problem you complained about: descriptions bleedin
 | # | Milestone | Needs from you | Who |
 |---|-----------|----------------|-----|
 | **0 ✅ DONE** | **QC bouncer built + wired into every save** (grid edits, quick-add, vault writer). Auto-repairs pipes/dates/synonyms, blocks the unfixable, logs every call. Verified end-to-end. | (used default word-lists — change anytime) | ✅ |
-| **1** | **Two secrets in `.env`** + pick the VM→backend network path. *Unblocks the entire Hermes column.* | Generate 2 secrets, pick path | you + we |
-| **2** | **GitHub push live** — private repo + token, attach remote, add `WOM_VAULT_PUSH`. *After QC gate.* | Make repo + token | you + we |
-| **3** | **Priorities round-trip** — writer first, then loader. | — | we build |
+| **1 — framework ✅** | Secret generator (`tools/gen_secrets.py`), `WOM_HOST` network-path wiring, service-token bearer all built. **Awaiting:** you generate the 2 secrets + pick the path. | Generate 2 secrets, pick path | framework done |
+| **2 — framework ✅** | Vault push built behind `WOM_VAULT_PUSH` (off, non-fatal) + `POST /api/vault/push`. **Awaiting:** your private repo + token + flip the flag. | Make repo + token | framework done |
+| **3 ✅ DONE** | **Priorities round-trip live** — overlay mirrors to `priorities.json` on every change; refresh loads it back (0–4 validated; empty file never wipes). Verified. | — | ✅ |
 | **4** | **Go live + locked** — VM → tunnel → Cloudflare Access → `AUTH_MODE=cloudflare` → private-window test → phone install. | Cloudflare clicks, cloudflared login | you + we |
 | **5** | **Hermes goes live** against the now-locked board (token + network already done). | Anthropic key in VM | you + we |
 | **6** | **Delegations bridge** — token-guarded, mock runner, no-silent-autonomy test. | Launch commands (later) | we build |

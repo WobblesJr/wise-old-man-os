@@ -82,6 +82,7 @@ def quick_add(payload: QuickAddTask):
                 "VALUES(?,?,?, 'you', 'set at quick-add', ?)",
                 (tid, payload.scope, payload.priority,
                  datetime.now(timezone.utc).isoformat(timespec="seconds")))
+        agent.sync_priorities_to_file()   # mirror the new priority to the vault file
     cache.refresh_all()  # re-cache so dashboards reflect it immediately
     return res
 

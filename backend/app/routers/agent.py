@@ -158,6 +158,7 @@ async def set_priority(p: PriorityIn):
             "ON CONFLICT(task_id,scope) DO UPDATE SET level=excluded.level, source='hermes', "
             "why=excluded.why, ts=excluded.ts",
             (p.task_id, p.scope, p.level, p.why, _now()))
+    sync_priorities_to_file()        # mirror to the durable vault file
     rec = {"task_id": p.task_id, "scope": p.scope, "level": p.level, "source": "hermes", "why": p.why}
     await _broadcast({"type": "priority", "priority": rec})
     return {"ok": True, "priority": rec}
@@ -169,6 +170,53 @@ def get_priorities(scope: str) -> dict:
         rows = conn.execute(
             "SELECT task_id, level, source, why FROM task_priorities WHERE scope=?", (scope,)).fetchall()
     return {r["task_id"]: {"level": r["level"], "source": r["source"], "why": r["why"]} for r in rows}
+
+
+# --- Priority round-trip with the vault file (Milestone 3) ---------------------------- #
+def _priorities_file():
+    from pathlib import Path
+    from ..config import settings
+    return Path(settings.BACKEND_DIR) / "data" / "vault" / "overlay" / "priorities.json"
+
+
+def sync_priorities_to_file() -> None:
+    """Mirror the DB overlay → overlay/priorities.json (so the file is the durable truth)."""
+    try:
+        with db.get_conn() as conn:
+            rows = conn.execute("SELECT task_id, scope, level, source, why, ts FROM task_priorities").fetchall()
+        data = {r["task_id"]: {"scope": r["scope"], "level": r["level"], "source": r["source"],
+                               "why": r["why"], "ts": r["ts"]} for r in rows}
+        p = _priorities_file(); p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def load_priorities_from_file() -> None:
+    """Read overlay/priorities.json → DB (Hermes can edit the file directly). Validates 0..4.
+    An empty/invalid file NEVER wipes live priorities (it just no-ops), and we never delete."""
+    p = _priorities_file()
+    if not p.exists():
+        return
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return
+    if not isinstance(data, dict) or not data:
+        return
+    with db.get_conn() as conn:
+        for tid, v in data.items():
+            try:
+                lvl = int(v.get("level"))
+            except (TypeError, ValueError):
+                continue
+            if lvl < 0 or lvl > 4:
+                continue
+            conn.execute(
+                "INSERT INTO task_priorities(task_id,scope,level,source,why,ts) VALUES(?,?,?,?,?,?) "
+                "ON CONFLICT(task_id,scope) DO UPDATE SET level=excluded.level, source=excluded.source, "
+                "why=excluded.why, ts=excluded.ts",
+                (tid, v.get("scope", "work"), lvl, v.get("source", "hermes"), v.get("why"), v.get("ts")))
 
 
 def seed_priorities_if_empty() -> None:

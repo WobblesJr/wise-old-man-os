@@ -93,8 +93,26 @@ class GitVaultStore:
         f.write_text(_serialize(tasks), encoding="utf-8")
         _git(["add", "-A"], self.dir)
         code, out = _git(["commit", "-m", msg], self.dir)
-        # push is intentionally NOT done here (Hermes owns remote sync) — see runbook.
-        return "committed" if code == 0 else "nochange"
+        state = "committed" if code == 0 else "nochange"
+        if state == "committed" and settings.VAULT_PUSH:
+            try:
+                self.push()           # non-fatal: a dropped network never blocks a save
+            except Exception:
+                pass
+        return state
+
+    def push(self) -> dict:
+        """Push the vault to its GitHub remote. Off by default (WOM_VAULT_PUSH); a stubbed
+        remote is a no-op. Never raises into a save path — failures are reported, not fatal."""
+        if not settings.VAULT_PUSH:
+            return {"ok": True, "state": "push_off"}
+        remote = settings.VAULT_REMOTE
+        if not remote or remote.startswith("__STUB"):
+            return {"ok": True, "state": "no_remote", "note": "set WOM_VAULT_REMOTE to enable"}
+        code, _ = _git(["remote", "get-url", "origin"], self.dir)
+        _git(["remote", "set-url" if code == 0 else "add", "origin", remote], self.dir)
+        code, out = _git(["push", "origin", f"HEAD:{settings.VAULT_BRANCH}"], self.dir)
+        return {"ok": code == 0, "state": "pushed" if code == 0 else "push_failed", "detail": out[-300:]}
 
     def add_task(self, scope: str, task: dict) -> dict:
         self._seq += 1

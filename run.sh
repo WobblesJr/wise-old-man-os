@@ -13,4 +13,4 @@ echo "  API:  http://127.0.0.1:8787/api/health"
 echo "  Docs: http://127.0.0.1:8787/docs"
 echo ""
 
-exec python -m uvicorn app.main:app --host 127.0.0.1 --port 8787 --reload
+exec python -m uvicorn app.main:app --host "${WOM_HOST:-127.0.0.1}" --port 8787 --reload

@@ -25,6 +25,8 @@ def _now() -> str:
 
 def refresh_all() -> dict:
     """Pull everything from adapters into the panel cache + base tables."""
+    from .routers import agent as _agent
+    _agent.load_priorities_from_file()   # pick up any priorities.json edits (Hermes-owned), validated
     a = get_adapters()
     ts = _now()
     counts = {}

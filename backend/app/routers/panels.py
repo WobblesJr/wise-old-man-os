@@ -99,6 +99,17 @@ def warboard_run(scope: str = Query("work", pattern="^(personal|work)$")):
     return warboard.fan_out(scope)
 
 
+@router.post("/vault/push")
+def vault_push():
+    """Push the vault to its GitHub remote (off until WOM_VAULT_PUSH + a remote are set).
+    Safe to call from a cron; never fatal."""
+    from ..adapters import get_adapters
+    store = get_adapters().sheet
+    if hasattr(store, "push"):
+        return store.push()
+    return {"ok": False, "state": "not_a_vault_store"}
+
+
 @router.get("/qc/log")
 def qc_log(limit: int = 30):
     """Recent QC bouncer decisions (what was auto-repaired vs blocked)."""

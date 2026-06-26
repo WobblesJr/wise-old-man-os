@@ -16,4 +16,5 @@ Write-Host "  API:  http://127.0.0.1:8787/api/health" -ForegroundColor Cyan
 Write-Host "  Docs: http://127.0.0.1:8787/docs" -ForegroundColor Cyan
 Write-Host ""
 
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8787 --reload
+$bindHost = if ($env:WOM_HOST) { $env:WOM_HOST } else { "127.0.0.1" }
+python -m uvicorn app.main:app --host $bindHost --port 8787 --reload

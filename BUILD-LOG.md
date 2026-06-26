@@ -215,4 +215,20 @@ Reverse-chronological log of what got built, by an autonomous session.
   over HTTP (piped grid edit → cleaned + committed; bad status → 422; "Done"→completed; vault row
   stays exactly 12 cells; QC log shows repairs/blocks). The malformed-cell defect class is closed.
 
+### Milestones 1–3 frameworks (creds stubbed until you say go) — DONE, verified
+- **M1 (secrets + network path):** `tools/gen_secrets.py` prints the two random tokens you paste;
+  run scripts + `.env.example` honor `WOM_HOST` (set 0.0.0.0 so the VM/tunnel reaches the backend).
+  The auth gate + service-token bearer already exist — just awaiting your real values.
+- **M2 (vault → GitHub push):** `GitVaultStore.push()` behind `WOM_VAULT_PUSH` (default off), remote
+  from `WOM_VAULT_REMOTE` (stubbed); auto-push after commit when enabled, **non-fatal** (a dropped
+  network never blocks a save); manual/cron trigger `POST /api/vault/push`. Verified: off→push_off,
+  flag-on+stub-remote→no_remote (never raises). Activates when you add the private repo + token.
+- **M3 (priorities round-trip) — FULLY DONE:** `POST /api/agent/priority` + quick-add now mirror the
+  overlay to `vault/overlay/priorities.json` (writer); `cache.refresh_all` loads the file back into the
+  DB each refresh (loader), validating `0–4`, ignoring junk, and **an empty file never wipes** live
+  priorities. Verified: seed→file (5 entries), Hermes file-edit→DB (w-t3→P4), out-of-range ignored,
+  empty-file safety holds. This is how Hermes owns priorities by editing one JSON file.
+- Also: `docs/YOUR-GO-LIVE-CHECKLIST.md` — the outside-this-terminal action list (accounts, Cloudflare,
+  VM, Windows, storage, Google), grouped + ordered, with the absolute-minimum-to-go-live at the bottom.
+
 <!-- newest entries go ABOVE this line as work proceeds -->

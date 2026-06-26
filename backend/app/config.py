@@ -26,6 +26,11 @@ class Settings:
     # --- runtime ---
     DATA_MODE: str = _env("WOM_DATA_MODE", "mock").lower()  # mock | live
     TASK_STORE: str = _env("WOM_TASK_STORE", "vault").lower()  # vault (durable, git) | mock
+
+    # --- vault git push (Milestone 2 framework; off until you add a remote + token) ---
+    VAULT_PUSH: bool = _env("WOM_VAULT_PUSH", "false").lower() == "true"
+    VAULT_REMOTE: str = _env("WOM_VAULT_REMOTE", "__STUB_GIT_REMOTE__")  # e.g. git@github.com:you/wom-vault.git
+    VAULT_BRANCH: str = _env("WOM_VAULT_BRANCH", "master")
     ENV: str = _env("WOM_ENV", "dev")
     HOST: str = _env("WOM_HOST", "127.0.0.1")
     PORT: int = int(_env("WOM_PORT", "8787"))
