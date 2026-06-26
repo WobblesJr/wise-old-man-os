@@ -43,6 +43,17 @@ class Settings:
         if o.strip()
     ]
 
+    # --- auth (Sign in with Google, locked to an allowlist) ---
+    AUTH_MODE: str = _env("WOM_AUTH_MODE", "off").lower()   # off | app | cloudflare
+    AUTH_DEV_BYPASS: bool = _env("WOM_AUTH_DEV_BYPASS", "true" if _env("WOM_ENV", "dev") == "dev" else "false").lower() == "true"
+    GOOGLE_CLIENT_SECRET: str = _env("GOOGLE_CLIENT_SECRET", "__STUB_GOOGLE_SECRET__")
+    SESSION_SECRET: str = _env("SESSION_SECRET", "dev-insecure-change-me")
+    SERVICE_TOKEN: str = _env("WOM_SERVICE_TOKEN", "__STUB_SERVICE_TOKEN__")
+    WOM_PUBLIC_URL: str = _env("WOM_PUBLIC_URL", "http://localhost:8787")
+    ALLOWED_EMAILS: list[str] = [
+        e.strip().lower() for e in _env("ALLOWED_EMAILS", "gavin.watson.jr@gmail.com").split(",") if e.strip()
+    ]
+
     # --- google personal (stubbed) ---
     GOOGLE_CLIENT_ID: str = _env("GOOGLE_CLIENT_ID", "__STUB_GOOGLE_CLIENT_ID__")
     GSUITE_DASHBOARD_SHEET_ID: str = _env("GSUITE_DASHBOARD_SHEET_ID", "__STUB_SHEET_ID__")

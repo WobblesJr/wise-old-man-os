@@ -10,12 +10,13 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import db, cache
 from .config import settings
-from .routers import panels, tasks, approvals, capture, usage, actions, agent
+from .auth import guard
+from .routers import panels, tasks, approvals, capture, usage, actions, agent, auth
 
 app = FastAPI(title="Wise Old Man OS", version="0.1.0",
               description="Personal+Work command center — running on MOCK data.")
@@ -29,8 +30,21 @@ app.add_middleware(
 )
 
 for r in (panels.router, tasks.router, approvals.router, capture.router,
-          usage.router, actions.router, agent.router, agent.console_router):
+          usage.router, actions.router, agent.router, agent.console_router, auth.router):
     app.include_router(r)
+
+
+@app.middleware("http")
+async def _auth_gate(request, call_next):
+    """Gate every route behind the allowlisted login (or Hermes bearer token).
+    WOM_AUTH_MODE=off (default) keeps the mock demo open; flip to app|cloudflare for prod."""
+    if settings.AUTH_MODE == "off" or request.method == "OPTIONS" or guard.is_open(request.url.path):
+        return await call_next(request)
+    if guard.resolve_identity(request) is None:
+        if request.url.path.startswith("/api"):
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+        return RedirectResponse("/auth/login")
+    return await call_next(request)
 
 
 @app.on_event("startup")

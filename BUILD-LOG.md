@@ -190,4 +190,15 @@ Reverse-chronological log of what got built, by an autonomous session.
 - **Verified**: add task → written to `work.md` + committed (`web: add …`) → a FRESH process
   re-reads it (durable across restarts). The dashboard is now continuously usable on local files.
 
+### Secure login gate (Sign in with Google, allowlisted) — DONE, verified
+- Per the auth design (background agent): app-level gate now + Cloudflare Access recommended for prod.
+- **`backend/app/auth/`**: stateless signed session cookie (stdlib HMAC, no new deps) + `guard.py`
+  identity resolver (browser session / CF-Access email / **Hermes bearer token** / localhost dev-bypass).
+- **`routers/auth.py`**: `/auth/login` (Google redirect when creds present, else a dark dev-sign-in page),
+  `/auth/callback` (dev path works now; real Google token-exchange is a labeled TODO for go-live),
+  `/auth/logout`, `/auth/me`. Middleware in `main.py` gates everything except `/auth/*` + `/api/health`.
+- `WOM_AUTH_MODE=off` (default) keeps the demo open; `app`/`cloudflare` enforce. Allowlist = your email only.
+- **Verified**: bearer token → machine; signed cookie (allowlisted) → human; forged/non-allowlisted/remote
+  → blocked; `/auth/login` renders; `/auth/callback?dev=1` sets the cookie; demo stays open at mode=off.
+
 <!-- newest entries go ABOVE this line as work proceeds -->
