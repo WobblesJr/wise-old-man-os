@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query
 
-from .. import cache
+from .. import cache, risk
 from ..adapters import get_adapters
 from ..models import QuickAddTask, TaskPatch
 
@@ -19,7 +19,7 @@ def list_tasks(
     filter: str = Query("all"),
 ):
     a = get_adapters()
-    rows = a.sheet.list_tasks(scope)
+    rows = risk.stamp_tasks(a.sheet.list_tasks(scope))  # deadline-defense risk on every row
     f = filter.lower()
     if f == "mine":
         rows = [r for r in rows if r.get("ball_in_court") == "Me" and r["status"] != "completed"]

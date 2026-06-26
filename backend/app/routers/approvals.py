@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Query, HTTPException
 
-from .. import db
+from .. import db, cache
 from ..adapters import get_adapters
 from ..models import ApproveIn
 
@@ -36,10 +36,11 @@ def decide(payload: ApproveIn):
     """Approve/reject an approval. STUB: routes through the adapter in mock mode,
     which performs a no-op 'send'. Nothing leaves the machine."""
     with db.get_conn() as conn:
-        row = conn.execute("SELECT data FROM approvals WHERE id=?", (payload.approval_id,)).fetchone()
+        row = conn.execute("SELECT scope, data FROM approvals WHERE id=?", (payload.approval_id,)).fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="approval not found")
         ap = json.loads(row["data"])
+        scope = row["scope"]
 
         result = {"ok": True, "mock": True, "decision": payload.decision, "approval": ap["id"]}
         if payload.decision == "approve":
@@ -53,7 +54,16 @@ def decide(payload: ApproveIn):
             elif kind == "calendar_create":
                 result["effect"] = a.google.create_calendar_event({"title": ap["title"]})
             elif kind == "sheet_write":
-                result["effect"] = {"ok": True, "mock": True, "note": "Mock sheet write — not touched."}
+                # SHEET-WRITE SPINE: actually route through the SheetTasks adapter
+                # (mock append/update in mock mode — the live adapter swaps in unchanged).
+                tgt = ap.get("effect_target") or {}
+                task_id = tgt.get("task_id")
+                patch = tgt.get("patch") or {}
+                if task_id and patch:
+                    result["effect"] = a.sheet.update_task(scope, task_id, patch)
+                else:
+                    result["effect"] = {"ok": False, "mock": True,
+                                        "note": "sheet_write approval missing effect_target"}
             elif kind == "schedule_post":
                 result["effect"] = a.discord.post(ap.get("target", "#general"), ap["summary"])
             else:
@@ -63,7 +73,13 @@ def decide(payload: ApproveIn):
         conn.execute("UPDATE approvals SET status=? WHERE id=?", (new_status, ap["id"]))
         conn.execute(
             "INSERT INTO actions_log(kind, ref, scope, result, created_at) VALUES(?,?,?,?,?)",
-            (f"approval:{payload.decision}", ap["id"], ap.get("scope"),
+            (f"approval:{payload.decision}", ap["id"], scope,
              json.dumps(result), datetime.now(timezone.utc).isoformat(timespec="seconds")),
         )
+
+    # If we actually changed the sheet, re-cache so dashboards reflect it now.
+    # (Outside the connection block above so the write is committed first.)
+    if payload.decision == "approve" and ap.get("kind") == "sheet_write" \
+            and result.get("effect", {}).get("ok"):
+        cache.refresh_all()
     return result

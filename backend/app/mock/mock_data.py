@@ -50,7 +50,7 @@ TASKS = {
         {"id": "p-t8", "bang": "", "description": "Update OSRS goals spreadsheet",
          "start": "2026-06-23", "followup": "", "due": "2026-06-29",
          "owner": "Gavin", "ball_in_court": "Me", "category": "Hobby", "subcategory": "OSRS",
-         "action": "action", "status": "completed"},
+         "action": "action", "status": "in_progress"},
     ],
     "work": [
         {"id": "w-t1", "bang": "!", "description": "Submit RFI on mechanical room clearances",
@@ -103,7 +103,9 @@ APPROVALS = {
          "target": "Personal calendar", "draft_id": None, "risk": "low", "status": "pending"},
         {"id": "p-a3", "kind": "sheet_write", "title": "Mark 'OSRS goals' task complete",
          "summary": "Set status=completed on row p-t8 in G-Suite Dashboard.",
-         "target": "G-Suite Dashboard / Tasks", "draft_id": None, "risk": "low", "status": "pending"},
+         "target": "G-Suite Dashboard / Tasks", "draft_id": None, "risk": "low", "status": "pending",
+         # the concrete write the sheet-write spine applies on approve:
+         "effect_target": {"task_id": "p-t8", "patch": {"status": "completed"}}},
     ],
     "work": [
         {"id": "w-a1", "kind": "email_send", "title": "Send RFI cover note to GC",

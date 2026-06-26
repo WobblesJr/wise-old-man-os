@@ -65,4 +65,29 @@ Reverse-chronological log of what got built, by an autonomous session.
   and the WindowsApps 3.8. `run.ps1/.sh` pip-install first, so they self-provision
   whichever `python` resolves to.
 
+### Phase 1 deadline-defense (from the 12-agent roadmap) — DONE, verified
+- **`risk()` scorer** (`backend/app/risk.py`): one server-side verdict per task —
+  band (green/amber/red/done), reason, days-to-due, follow-up staleness, runway,
+  sortable score. Anchored demo "today" = 2026-06-25 (real clock in live mode).
+- **Stamped everywhere**: cache stamps tasks + sorts suggestions by the same engine;
+  tasks router stamps too. Hero now ranks by risk (verified order w-s1>w-s2>w-s3>w-s4).
+- **Sheet-write spine**: `decide()` `sheet_write` now routes through
+  `SheetTasks.update_task` (was a no-op). Verified: approving p-a3 flips p-t8
+  in_progress→completed; re-caches so dashboards reflect it. Added approval
+  `created_at`/`last_nudged`/`nudge_count` (Phase-2 chaser groundwork).
+- **Preview UI**: risk engine mirrored in JS (agrees with backend exactly); task
+  table gains a Risk column with right-edge glowing pip, Due cell colored by band,
+  auto-bang on red, and a legend (left bar = action type, right pip = deadline risk).
+  Verified via DOM: pips red/amber/amber, reasons "due in 2d"/"blocked"/"due in 5d".
+- Follow-up (unverified, no Node): mirror the risk pip into `frontend` Tasks.jsx
+  using the `task.risk` the API now returns.
+
+### Desktop layout (adapts the happy mobile layout) — DONE, verified
+- Single responsive source (option a). lg≥1024 = left sidebar (wordmark + vertical
+  nav + scope toggle + MOCK) replacing the top bar, content capped 1360px; md 768-1023
+  = top bar + 2-up tiles; <768 = mobile layout unchanged. Focus-visible rings + tile
+  hover-lift. Mirrored shell into React `frontend/App.jsx`.
+- Verified switching at 1440/820/375 via DOM inspection (preview screenshot tool was
+  wedged all session — used eval/inspect, which the tool docs prefer for layout anyway).
+
 <!-- newest entries go ABOVE this line as work proceeds -->

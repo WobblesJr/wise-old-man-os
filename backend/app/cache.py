@@ -10,6 +10,7 @@ import json
 from datetime import datetime, timezone
 
 from . import db
+from . import risk
 from .adapters import get_adapters
 from .mock import mock_data as M
 
@@ -28,10 +29,21 @@ def refresh_all() -> dict:
 
     # --- scoped panels ---
     for scope in SCOPES:
-        db.put_panel("suggestions", scope, M.scope_get(M.SUGGESTIONS, scope), ts)
+        # stamp the deadline-defense risk verdict on every task (single source of urgency)
+        tasks = risk.stamp_tasks(a.sheet.list_tasks(scope))
+        tasks_by_id = {t["id"]: t for t in tasks}
+
+        # rank suggestions by the SAME risk engine (hero shows the most-at-risk first)
+        suggestions = sorted(
+            M.scope_get(M.SUGGESTIONS, scope),
+            key=lambda s: risk.suggestion_score(s, tasks_by_id),
+            reverse=True,
+        )
+
+        db.put_panel("suggestions", scope, suggestions, ts)
         db.put_panel("today", scope, a.google.today(scope), ts)
         db.put_panel("inbox", scope, a.google.inbox(scope), ts)
-        db.put_panel("tasks", scope, a.sheet.list_tasks(scope), ts)
+        db.put_panel("tasks", scope, tasks, ts)
         db.put_panel("task_counts", scope, M.task_counts(scope), ts)
         db.put_panel("memory", scope, a.memory.recent(scope), ts)
         db.put_panel("approvals", scope, M.scope_get(M.APPROVALS, scope), ts)
@@ -53,6 +65,9 @@ def refresh_all() -> dict:
 
         for scope in SCOPES:
             for ap in M.scope_get(M.APPROVALS, scope):
+                # stamp lifecycle fields the chaser/ledger rely on (Phase-2 ready)
+                ap = {**ap, "created_at": ap.get("created_at", ts),
+                      "last_nudged": ap.get("last_nudged"), "nudge_count": ap.get("nudge_count", 0)}
                 conn.execute(
                     "INSERT INTO approvals(id,scope,kind,title,summary,target,draft_id,risk,status,data)"
                     " VALUES(?,?,?,?,?,?,?,?,?,?)",
