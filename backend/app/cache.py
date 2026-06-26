@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 
 from . import db
 from . import risk
+from . import chaser
 from .adapters import get_adapters
 from .mock import mock_data as M
 
@@ -58,7 +59,7 @@ def refresh_all() -> dict:
 
     # --- base tables (approvals/drafts/usage/tasks) for non-panel queries ---
     with db.get_conn() as conn:
-        conn.execute("DELETE FROM approvals")
+        conn.execute("DELETE FROM approvals WHERE origin='seed'")  # keep chaser-generated chases
         conn.execute("DELETE FROM drafts")
         conn.execute("DELETE FROM tasks")
         conn.execute("DELETE FROM usage")
@@ -97,4 +98,15 @@ def refresh_all() -> dict:
             "drafts": conn.execute("SELECT COUNT(*) c FROM drafts").fetchone()["c"],
         }
 
+    # Ball-in-Court chaser: draft escalation nudges for stale balls (idempotent sweep),
+    # then rebuild the approvals panels from the DB so chases show on the dashboard tile.
+    chase_res = chaser.run_all()
+    for scope in SCOPES:
+        with db.get_conn() as conn:
+            rows = [json.loads(r["data"]) for r in conn.execute(
+                "SELECT data FROM approvals WHERE scope=? AND status='pending' ORDER BY origin DESC",
+                (scope,)).fetchall()]
+        db.put_panel("approvals", scope, rows, ts)
+
+    counts["chaser"] = chase_res
     return {"ok": True, "refreshed_at": ts, "counts": counts}

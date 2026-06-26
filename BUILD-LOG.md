@@ -90,4 +90,22 @@ Reverse-chronological log of what got built, by an autonomous session.
 - Verified switching at 1440/820/375 via DOM inspection (preview screenshot tool was
   wedged all session — used eval/inspect, which the tool docs prefer for layout anyway).
 
+### Phase 2 — Ball-in-Court chaser (deadline-defense follow-up engine) — DONE, verified
+- **`backend/app/chaser.py`**: idempotent sweep. When `risk()` flags a ball you're
+  WAITING ON (ball_in_court != Me) amber/red, drafts the next nudge in a 3-step ladder
+  (polite → firmer+CC → escalate to super) and surfaces it as an `email_send` approval.
+  Outbound stays locked to a human tap (chaser only drafts).
+- **Rules enforced**: follow-up re-arms ONLY when the approval fires (`on_chase_approved`,
+  via the sheet-write spine), never at draft time; ladder advances only on renewed
+  staleness (not mere due-date pressure); pending chases dedupe; chases for now-ineligible
+  tasks are withdrawn. `chases` table tracks nudge_count/ladder_level/status per task;
+  `origin` column keeps chaser approvals alive across cache refreshes.
+- **Wiring**: runs on every `refresh_all` (Hermes-cron seam) + `POST /api/chaser/run`;
+  approvals panel rebuilt from DB so chases show on the dashboard.
+- **Preview**: JS chaser mirror — AUTO-CHASE cards in the Approvals tile with ladder
+  label + "nudged ×N"; "Send nudge" re-arms (drops it). 
+- **Verified**: backend — 2 chases drafted (Turner GC, Dr. Pham); approving bumps
+  nudge_count→1, re-arms follow-up to 2026-06-28, sends nothing, throttles next nudge.
+  Preview (DOM) — chase card shown, click drops it + 3→2 pending + re-arm toast.
+
 <!-- newest entries go ABOVE this line as work proceeds -->

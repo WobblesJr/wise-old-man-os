@@ -35,7 +35,20 @@ CREATE TABLE IF NOT EXISTS approvals (
     draft_id TEXT,
     risk     TEXT,
     status   TEXT NOT NULL DEFAULT 'pending',
+    origin   TEXT NOT NULL DEFAULT 'seed',   -- 'seed' (mock) | 'chaser' (auto-generated)
     data     TEXT NOT NULL
+);
+
+-- Ball-in-Court chaser state: one row per task being chased.
+CREATE TABLE IF NOT EXISTS chases (
+    task_id      TEXT NOT NULL,
+    scope        TEXT NOT NULL,
+    nudge_count  INTEGER NOT NULL DEFAULT 0,   -- how many nudges actually sent (on approve)
+    ladder_level INTEGER NOT NULL DEFAULT 0,   -- 0 polite, 1 firmer+CC, 2 escalation
+    last_nudged  TEXT,
+    status       TEXT NOT NULL DEFAULT 'pending',  -- pending (awaiting your tap) | approved
+    approval_id  TEXT,
+    PRIMARY KEY (task_id, scope)
 );
 
 CREATE TABLE IF NOT EXISTS drafts (

@@ -60,3 +60,13 @@ def cockpit():
 @router.post("/refresh")
 def refresh():
     return cache.refresh_all()
+
+
+@router.post("/chaser/run")
+def chaser_run():
+    """Manually trigger the Ball-in-Court chaser sweep (also runs on every refresh /
+    Hermes cron). Returns how many chases were created/advanced/withdrawn."""
+    from .. import chaser
+    res = chaser.run_all()
+    cache.refresh_all()  # re-cache so the new chases surface on the dashboard
+    return res

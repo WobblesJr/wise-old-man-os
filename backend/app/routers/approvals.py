@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Query, HTTPException
 
-from .. import db, cache
+from .. import db, cache, chaser
 from ..adapters import get_adapters
 from ..models import ApproveIn
 
@@ -51,6 +51,9 @@ def decide(payload: ApproveIn):
                                          (ap["draft_id"],)).fetchone()
                 draft = json.loads(draft_row["data"]) if draft_row else {}
                 result["effect"] = a.google.send_email(draft)        # mock no-op
+                if ap.get("origin") == "chaser":
+                    # advance the chase: bump nudge count + re-arm follow-up (the only place it moves)
+                    result["chase"] = chaser.on_chase_approved(conn, scope, ap)
             elif kind == "calendar_create":
                 result["effect"] = a.google.create_calendar_event({"title": ap["title"]})
             elif kind == "sheet_write":
@@ -77,9 +80,11 @@ def decide(payload: ApproveIn):
              json.dumps(result), datetime.now(timezone.utc).isoformat(timespec="seconds")),
         )
 
-    # If we actually changed the sheet, re-cache so dashboards reflect it now.
-    # (Outside the connection block above so the write is committed first.)
-    if payload.decision == "approve" and ap.get("kind") == "sheet_write" \
-            and result.get("effect", {}).get("ok"):
+    # If we actually changed the sheet (direct write or a chase re-arming a follow-up),
+    # re-cache so dashboards reflect it now. (Outside the block above so it's committed.)
+    if payload.decision == "approve" and (
+        (ap.get("kind") == "sheet_write" and result.get("effect", {}).get("ok"))
+        or result.get("chase", {}).get("ok")
+    ):
         cache.refresh_all()
     return result
