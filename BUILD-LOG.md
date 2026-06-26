@@ -201,4 +201,18 @@ Reverse-chronological log of what got built, by an autonomous session.
 - **Verified**: bearer token → machine; signed cookie (allowlisted) → human; forged/non-allowlisted/remote
   → blocked; `/auth/login` renders; `/auth/callback?dev=1` sets the cookie; demo stays open at mode=off.
 
+### Milestone 0 — QC bouncer (schema + blocking gate before every write) — DONE, verified
+- `backend/app/qc.py`: deterministic structural validator. AUTO-REPAIRS the safe stuff (pipes→/,
+  collapse newlines/whitespace, enum casing + synonyms like "Done"→completed, loose dates 07/10→
+  2026-07-10) and BLOCKS what it can't safely fix (unknown action/status, unparseable date, a
+  description >200 chars = "several things in one cell — split it"), each with a plain reason.
+- Rulebook = the Python `TASK_SCHEMA` (authoritative); readable mirror written to
+  `vault/.wom/schema/tasks.yaml`. Action/Status word-lists are the system defaults (Category free-text).
+- Wired as a BLOCKING gate in front of every save: `routers/tasks.py` quick_add + patch_task (422 on
+  block), and `GitVaultStore.add_task/update_task` as the last-line sanitize. Every decision logged to
+  actions_log + an Obsidian-readable `.wom/qc-log/<date>.md`; viewable at `GET /api/qc/log`.
+- **Verified**: unit (pipes/newlines/synonym/bad-enum/loose-date/bad-date/overloaded all correct) +
+  over HTTP (piped grid edit → cleaned + committed; bad status → 422; "Done"→completed; vault row
+  stays exactly 12 cells; QC log shows repairs/blocks). The malformed-cell defect class is closed.
+
 <!-- newest entries go ABOVE this line as work proceeds -->

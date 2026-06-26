@@ -53,6 +53,8 @@ def _startup() -> None:
     cache.refresh_all()
     agent.seed_if_empty()              # seed a couple of Hermes beliefs (mock)
     agent.seed_priorities_if_empty()   # seed a few Hermes-decided P0..P4 priorities (mock)
+    from . import qc
+    qc.ensure_schema_mirror()          # write the readable vault/.wom/schema/tasks.yaml
 
 
 @app.get("/api/health")

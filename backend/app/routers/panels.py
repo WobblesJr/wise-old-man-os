@@ -97,3 +97,15 @@ def warboard_run(scope: str = Query("work", pattern="^(personal|work)$")):
     """The 6am cron entrypoint: build the brief and fan it out to Discord + Memory (mock)."""
     from .. import warboard
     return warboard.fan_out(scope)
+
+
+@router.get("/qc/log")
+def qc_log(limit: int = 30):
+    """Recent QC bouncer decisions (what was auto-repaired vs blocked)."""
+    import json as _json
+    with db.get_conn() as conn:
+        rows = conn.execute(
+            "SELECT kind, ref, scope, result, created_at FROM actions_log "
+            "WHERE kind LIKE 'qc_%' ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+    return {"log": [{"kind": r["kind"], "where": r["ref"], "scope": r["scope"],
+                     "created_at": r["created_at"], **_json.loads(r["result"])} for r in rows]}

@@ -160,7 +160,7 @@ This is the fix for the exact problem you complained about: descriptions bleedin
 
 | # | Milestone | Needs from you | Who |
 |---|-----------|----------------|-----|
-| **0** | **Build the QC bouncer** + wire it into every save. No keys, do now. | Approve two word-lists | we build |
+| **0 ✅ DONE** | **QC bouncer built + wired into every save** (grid edits, quick-add, vault writer). Auto-repairs pipes/dates/synonyms, blocks the unfixable, logs every call. Verified end-to-end. | (used default word-lists — change anytime) | ✅ |
 | **1** | **Two secrets in `.env`** + pick the VM→backend network path. *Unblocks the entire Hermes column.* | Generate 2 secrets, pick path | you + we |
 | **2** | **GitHub push live** — private repo + token, attach remote, add `WOM_VAULT_PUSH`. *After QC gate.* | Make repo + token | you + we |
 | **3** | **Priorities round-trip** — writer first, then loader. | — | we build |

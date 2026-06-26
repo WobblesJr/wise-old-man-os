@@ -17,6 +17,7 @@ from pathlib import Path
 
 from ..config import settings
 from ..mock import mock_data as M
+from .. import qc
 from .sheet_tasks import COLUMNS  # single-sourced column contract
 
 # File table columns: id first, then the sheet columns in order.
@@ -97,6 +98,7 @@ class GitVaultStore:
 
     def add_task(self, scope: str, task: dict) -> dict:
         self._seq += 1
+        task = qc.clean(task)            # last-line sanitize (idempotent after the router gate)
         rows = self.list_tasks(scope)
         row = {"id": f"{scope[0]}-t{self._seq}", "bang": task.get("bang", ""),
                "description": task.get("description", "(untitled)"),
@@ -110,6 +112,7 @@ class GitVaultStore:
         return {"ok": True, "mock": False, "committed": state, "task": row}
 
     def update_task(self, scope: str, task_id: str, patch: dict) -> dict:
+        patch = qc.clean(patch)          # last-line sanitize
         rows = self.list_tasks(scope)
         for r in rows:
             if r["id"] == task_id:

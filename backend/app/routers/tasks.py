@@ -1,9 +1,9 @@
 """Task endpoints — list (filterable), quick-add (writes via sheet adapter), patch."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 
-from .. import cache, risk
+from .. import cache, risk, qc
 from ..adapters import get_adapters
 from ..routers import agent
 from ..models import QuickAddTask, TaskPatch
@@ -68,7 +68,12 @@ def quick_add(payload: QuickAddTask):
     from datetime import datetime, timezone
     from .. import db
     a = get_adapters()
-    res = a.sheet.add_task(payload.scope, payload.model_dump(exclude={"scope", "priority"}))
+    # QC bouncer: clean/repair the row; refuse what can't be safely fixed.
+    g = qc.gate(payload.model_dump(exclude={"scope", "priority"}), partial=False)
+    qc.log_qc(payload.scope, "quick_add", g)
+    if not g["ok"]:
+        raise HTTPException(status_code=422, detail={"error": "qc_blocked", "issues": g["blocks"]})
+    res = a.sheet.add_task(payload.scope, g["cleaned"])
     if payload.priority is not None and res.get("task"):
         tid = res["task"]["id"]
         with db.get_conn() as conn:
@@ -85,6 +90,11 @@ def quick_add(payload: QuickAddTask):
 def patch_task(task_id: str, patch: TaskPatch,
                scope: str = Query("personal", pattern="^(personal|work)$")):
     a = get_adapters()
-    res = a.sheet.update_task(scope, task_id, patch.model_dump(exclude_none=True))
+    # QC bouncer on inline grid edits (partial = only the fields being changed).
+    g = qc.gate(patch.model_dump(exclude_none=True), partial=True)
+    qc.log_qc(scope, "grid_edit", g)
+    if not g["ok"]:
+        raise HTTPException(status_code=422, detail={"error": "qc_blocked", "issues": g["blocks"]})
+    res = a.sheet.update_task(scope, task_id, g["cleaned"])
     cache.refresh_all()
     return res
