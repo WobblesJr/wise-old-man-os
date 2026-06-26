@@ -40,15 +40,21 @@ Order is roughly "unblocks the most." Each item says **what to provide** and
 
 ---
 
-## 3. Cloudflare Tunnel — public hostname
-**Status:** 🟡 Stubbed. For serving the PWA from the VPS.
+## 3. Domain + Cloudflare Tunnel — `wise-old-man.xyz`
+**Status:** 🟡 Domain chosen (`wise-old-man.xyz`); DNS + tunnel + HTTPS still to wire.
 
-**What to provide**
-- The tunnel hostname (e.g. `wom.yourdomain.com`).
+**What to provide / do**
+- Point `wise-old-man.xyz` DNS at the Cloudflare tunnel (or the VPS).
+- Stand up the `cloudflared` tunnel to the backend (serves the app + API).
+- **HTTPS is required** for the iOS/Android "Add to Home Screen" PWA install to work
+  (Safari only offers it on a secure origin). Cloudflare provides the cert.
 
 **Where it plugs in**
-- `.env`: `CLOUDFLARE_TUNNEL_HOSTNAME`
-- Used by: backend CORS origins + frontend `VITE_API_BASE` (see `frontend/.env.example`), and the deploy notes in `README.md`.
+- `.env`: `WOM_PUBLIC_URL=https://wise-old-man.xyz`, `CLOUDFLARE_TUNNEL_HOSTNAME=wise-old-man.xyz`
+  (already set as defaults). It's in `WOM_CORS_ORIGINS` too.
+- Frontend `VITE_API_BASE=https://wise-old-man.xyz` for the built app.
+- The PWA manifests (`preview/manifest.webmanifest`, frontend Vite manifest) + Apple touch
+  icons are already in place; they just need to be served over that HTTPS origin.
 
 ---
 

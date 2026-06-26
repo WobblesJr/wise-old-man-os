@@ -123,4 +123,18 @@ Reverse-chronological log of what got built, by an autonomous session.
   Turner GC stale; highest=RFI) + fan-out (Discord #daily-work + memory note) + preview
   band (DOM) matches the backend exactly.
 
+### Hosting + installable PWA (iOS "Add to Home Screen") — DONE, verified
+- Domain chosen: **wise-old-man.xyz**. Wired into `.env.example` (`WOM_PUBLIC_URL`,
+  `CLOUDFLARE_TUNNEL_HOSTNAME`, CORS), README deploy section, NEEDS-FROM-YOU #3
+  (DNS+tunnel+HTTPS still to do; HTTPS required for the install prompt).
+- iOS install: Apple meta tags (`apple-mobile-web-app-capable/-title/-status-bar-style`)
+  + `apple-touch-icon` in both `preview/index.html` and `frontend/index.html`.
+- Real PNG icons generated (green tile + dark W) via `tools/gen_icons.py`:
+  apple-touch-icon(180)/icon-192/icon-512 in `preview/` and `frontend/public/`.
+- Manifests updated (preview + frontend Vite) with PNG icons, id/start_url/scope, maskable.
+- **Verified**: served apple-touch-icon/icon-192/manifest all 200; served HTML head carries
+  the Apple tags. Safari → Share → Add to Home Screen will install once on HTTPS.
+- Vision captured: "living/adaptive" system → registry-driven layout (skills + cron jobs
+  declared as data so new ones auto-surface new sections). See docs/WARBOARD-V2-SPEC.md.
+
 <!-- newest entries go ABOVE this line as work proceeds -->

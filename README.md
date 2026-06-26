@@ -111,7 +111,16 @@ Everything is stubbed behind clean interfaces. See **`NEEDS-FROM-YOU.md`** for t
 secrets/decisions and where each one plugs in. Set `WOM_DATA_MODE=live` once the `Live*`
 adapters are implemented.
 
-## Deploy (later)
+## Deploy → `wise-old-man.xyz`
 
-VPS behind a **Cloudflare tunnel**; **Hermes cron** calls `POST /api/refresh` on a
-schedule. Set `CLOUDFLARE_TUNNEL_HOSTNAME` and add it to `WOM_CORS_ORIGINS`.
+VPS behind a **Cloudflare tunnel** at **https://wise-old-man.xyz**; **Hermes cron** calls
+`POST /api/refresh` (and `POST /api/warboard/run` at ~6am) on a schedule.
+- DNS for `wise-old-man.xyz` → Cloudflare tunnel → the FastAPI backend (serves app + API).
+- `WOM_PUBLIC_URL` / `CLOUDFLARE_TUNNEL_HOSTNAME` and the CORS origin are pre-set in `.env.example`.
+
+### Install on your phone (Add to Home Screen)
+Once served over **HTTPS** at the domain:
+- **iOS Safari:** open the site → **Share** → **Add to Home Screen**. It installs as a
+  standalone app ("Wise Old Man") using the Apple touch icon + manifest (already wired in
+  `preview/index.html` / the frontend `index.html`). HTTPS is required — it won't offer it over http.
+- **Android Chrome:** you'll get an install prompt / "Add to Home screen" from the menu.
