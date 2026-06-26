@@ -1,0 +1,71 @@
+# =============================================================================
+# Wise Old Man OS — environment template
+# Copy to .env and fill in. EVERYTHING here is stubbed; the app runs on mock
+# data until these are provided. See NEEDS-FROM-YOU.md for what plugs in where.
+# =============================================================================
+
+# --- Runtime mode -----------------------------------------------------------
+# mock = serve canned JSON (default, no creds needed). live = use real adapters.
+WOM_DATA_MODE=mock
+WOM_ENV=dev
+
+# --- Backend ----------------------------------------------------------------
+WOM_HOST=127.0.0.1
+WOM_PORT=8787
+WOM_DB_PATH=backend/data/wom.db
+WOM_CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://wise-old-man.xyz
+# Task store: vault = durable markdown+git (default), mock = in-memory
+WOM_TASK_STORE=vault
+# Network path: keep 127.0.0.1 for localhost-only; set 0.0.0.0 so the Ubuntu VM / tunnel can reach it
+WOM_HOST=127.0.0.1
+# Vault → GitHub push (Milestone 2). Off until you add a private repo remote + token.
+WOM_VAULT_PUSH=false
+WOM_VAULT_REMOTE=__STUB_GIT_REMOTE__          # e.g. git@github.com:you/wom-vault.git
+WOM_VAULT_BRANCH=master
+
+# --- Auth (Sign in with Google, locked to your email) -----------------------
+# off = open (mock demo) · app = app-level Google login · cloudflare = CF Access at the edge
+WOM_AUTH_MODE=off
+WOM_AUTH_DEV_BYPASS=true                       # localhost needs no login while developing
+ALLOWED_EMAILS=gavin.watson.jr@gmail.com       # ONLY these addresses may sign in
+SESSION_SECRET=__CHANGE_ME_TO_A_LONG_RANDOM__  # signs the session cookie (set in prod)
+WOM_SERVICE_TOKEN=__STUB_SERVICE_TOKEN__       # Hermes posts to /api with this bearer token
+
+# --- Google (PERSONAL account: gavin.watson.jr@gmail.com) -------------------
+# OAuth desktop/web client. Needed for Gmail, Calendar, Drive, Sheets.
+# STUB — see NEEDS-FROM-YOU.md #1
+GOOGLE_CLIENT_ID=__STUB_GOOGLE_CLIENT_ID__
+GOOGLE_CLIENT_SECRET=__STUB_GOOGLE_CLIENT_SECRET__
+GOOGLE_OAUTH_TOKEN_PATH=backend/data/google_personal.token.json
+# Space-separated scopes. Sheets needs read+write for task quick-add.
+GOOGLE_SCOPES=https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets
+
+# --- G-Suite Dashboard Sheet (the task source-of-truth) ---------------------
+# STUB — see NEEDS-FROM-YOU.md #2
+GSUITE_DASHBOARD_SHEET_ID=__STUB_SHEET_ID__
+GSUITE_DASHBOARD_TAB=Tasks
+
+# --- Limbach WORK account ---------------------------------------------------
+# BLOCKED pending IT. Leave stubbed. — see NEEDS-FROM-YOU.md #4
+LIMBACH_GRAPH_CLIENT_ID=__STUB_BLOCKED_PENDING_IT__
+LIMBACH_GRAPH_CLIENT_SECRET=__STUB_BLOCKED_PENDING_IT__
+LIMBACH_DRIVE_ROOT=__STUB_BLOCKED_PENDING_IT__
+
+# --- Public domain + Cloudflare tunnel --------------------------------------
+# Domain is chosen: wise-old-man.xyz. Still need DNS + tunnel wired (NEEDS-FROM-YOU #3).
+# HTTPS here is REQUIRED for the iOS/Android "Add to Home Screen" PWA install.
+WOM_PUBLIC_URL=https://wise-old-man.xyz
+CLOUDFLARE_TUNNEL_HOSTNAME=wise-old-man.xyz
+
+# --- Feeds (all optional; mock works without them) --------------------------
+OSRS_HISCORES_USERNAME=__STUB_OSRS_NAME__
+NEWS_API_KEY=__STUB_NEWS_API_KEY__
+# OSRS Wiki prices + Hiscores are public/no-key. World Cup / DC events use mock.
+
+# --- Discord ----------------------------------------------------------------
+DISCORD_BOT_TOKEN=__STUB_DISCORD_BOT_TOKEN__
+DISCORD_DEFAULT_CHANNEL_ID=__STUB_DISCORD_CHANNEL_ID__
+
+# --- Memory (Obsidian git vault) --------------------------------------------
+MEMORY_VAULT_PATH=__STUB_OBSIDIAN_VAULT_PATH__
+MEMORY_GIT_REMOTE=__STUB_MEMORY_GIT_REMOTE__

@@ -241,4 +241,13 @@ Reverse-chronological log of what got built, by an autonomous session.
   each value in its correct column (! / Description / Start / Follow-up / Due / Owner / Ball-in-Court /
   Category / Subcategory / Action / Status / Risk).
 
+### Fix: iOS PWA top cut off behind status bar (safe-area insets) — DONE
+- Installed standalone PWA drew full-bleed under the notch/status bar (viewport-fit=cover +
+  black-translucent), hiding the top bar + the Personal⇄Work toggle so it couldn't be tapped.
+- Fix (preview/index.html CSS): `.topbar` top padding = `calc(env(safe-area-inset-top) + 10px)`
+  (+ left/right insets for landscape); `.console` + `.mnav` get `env(safe-area-inset-bottom)` to
+  clear the home indicator. env() falls back to 0 on non-notch screens → no desktop/tablet change.
+- The dark top-bar background now fills the status-bar area (reads as a native dark bar).
+- Note: React frontend header (frontend/) would want the same insets when it's built (parity TODO).
+
 <!-- newest entries go ABOVE this line as work proceeds -->
