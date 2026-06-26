@@ -112,6 +112,18 @@ CREATE TABLE IF NOT EXISTS console_messages (
     text      TEXT NOT NULL
 );
 
+-- Priority OVERLAY (P0..P4, 4 = highest). NOT a column in Gavin's sheet — it's decided by
+-- Hermes from all current info and lives here, layered on top of the sheet's raw task data.
+CREATE TABLE IF NOT EXISTS task_priorities (
+    task_id  TEXT NOT NULL,
+    scope    TEXT NOT NULL,
+    level    INTEGER NOT NULL,            -- 0..4 (P4 highest)
+    source   TEXT NOT NULL DEFAULT 'hermes',  -- hermes | rules
+    why      TEXT,
+    ts       TEXT,
+    PRIMARY KEY (task_id, scope)
+);
+
 -- The HERMES layer: agent-authored beliefs/decisions posted in real time, distinct from
 -- the deterministic rules engine (risk/chaser/warboard). provenance tags who authored it.
 CREATE TABLE IF NOT EXISTS agent_signals (

@@ -37,7 +37,8 @@ for r in (panels.router, tasks.router, approvals.router, capture.router,
 def _startup() -> None:
     db.init_db()
     cache.refresh_all()
-    agent.seed_if_empty()   # seed a couple of Hermes beliefs (mock)
+    agent.seed_if_empty()              # seed a couple of Hermes beliefs (mock)
+    agent.seed_priorities_if_empty()   # seed a few Hermes-decided P0..P4 priorities (mock)
 
 
 @app.get("/api/health")

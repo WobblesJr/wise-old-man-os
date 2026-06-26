@@ -28,8 +28,9 @@ or the public `https://wise-old-man.xyz` tunnel.
 **Reads (state):** `GET /api/dashboard?scope=` · `/api/tasks` · `/api/approvals` · `/api/warboard` ·
 `/api/cockpit` · `/api/usage` · `/api/agent/signals` · **SSE `/api/agent/stream`**.
 **Writes (act — all draft-everything, nothing auto-sends):**
-`POST /api/agent/signal` (post a belief — LIVE on the board) · `/api/capture` · `/api/tasks` (quick-add) ·
-`PATCH /api/tasks/{id}` · `/api/approvals/decide` · `/api/actions/{schedule,run}` ·
+`POST /api/agent/signal` (post a belief — LIVE on the board) · `/api/agent/priority` (set a task's
+P0–P4 — overlay, not the sheet) · `/api/console/message` (multi-agent shared console) · `/api/capture` ·
+`/api/tasks` (quick-add) · `PATCH /api/tasks/{id}` · `/api/approvals/decide` · `/api/actions/{schedule,run}` ·
 `/api/warboard/run` · `/api/chaser/run` · `/api/refresh` · `/api/delegations*` (🆕).
 
 | Item | Status | Provide |

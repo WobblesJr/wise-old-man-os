@@ -17,6 +17,7 @@ class QuickAddTask(BaseModel):
     subcategory: Optional[str] = ""
     ball_in_court: Optional[str] = "Me"
     bang: Optional[str] = ""
+    priority: Optional[int] = Field(default=None, ge=0, le=4)   # optional user-picked P0..P4
 
 
 class TaskPatch(BaseModel):
@@ -63,3 +64,11 @@ class ConsoleMessageIn(BaseModel):
     to_agent: str = Field(default="hermes", pattern="^(hermes|claude-code|cowork)$")
     agent: str = "you"                    # who is speaking (default: the user)
     scope: Optional[str] = "work"
+
+
+class PriorityIn(BaseModel):
+    """Hermes assigns a task's priority (P0..P4, 4 = highest) — an overlay, not in the sheet."""
+    scope: str = Field(default="work", pattern="^(personal|work)$")
+    task_id: str
+    level: int = Field(ge=0, le=4)
+    why: Optional[str] = None

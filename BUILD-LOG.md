@@ -164,4 +164,17 @@ Reverse-chronological log of what got built, by an autonomous session.
   agents re-targets; persisted history from a different writer shows up (proves shared storage).
 - To go live: each real agent posts its lines via `POST /api/console/message`.
 
+### Task sorting + Hermes priority overlay + smarter quick-add — DONE, verified
+- **Priority P0..P4 (P4 highest) as an OVERLAY, not in the sheet** — decided by Hermes, with a
+  rules-derived fallback so it's never blank. New `task_priorities` table + `POST /api/agent/priority`
+  (Hermes sets it) + seeds; tasks API attaches `{level, source: hermes|rules|you, why}` and accepts
+  a user-picked priority on quick-add (stored in the overlay, never the sheet).
+- **Sort**: tasks API `?sort=` and preview sort control — Priority (P4→P0), A→Z, Z→A, Due, Sheet order.
+  Preview shows a colored P-badge (✦ Hermes / ✎ you / muted rules) + a new "Prio" column.
+- **Smarter quick-add**: a "📍 On site" context selector auto-files new tasks under that project
+  (category auto-fill); tap-through selects for Category / Action / Priority — no typing the fields.
+- **Verified (DOM)**: default prio sort lists ✦P4 first then rules P3; A→Z alphabetizes; setting
+  context=Project Alpha auto-fills the category; quick-add with P4 → task tagged "✎ P4 / Project Alpha".
+- Backend sort verified too (P4-first, az/za). To go live: Hermes calls `POST /api/agent/priority`.
+
 <!-- newest entries go ABOVE this line as work proceeds -->

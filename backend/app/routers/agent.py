@@ -15,7 +15,7 @@ from fastapi import APIRouter, Query, Request
 from fastapi.responses import StreamingResponse
 
 from .. import db
-from ..models import AgentSignalIn, ConsoleMessageIn
+from ..models import AgentSignalIn, ConsoleMessageIn, PriorityIn
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
 console_router = APIRouter(prefix="/api/console", tags=["console"])
@@ -147,6 +147,45 @@ def list_console(scope: str = Query("work"), limit: int = 40):
             "SELECT id, ts, scope, agent, to_agent, text FROM console_messages "
             "ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
     return {"messages": [dict(r) for r in reversed(rows)]}
+
+
+@router.post("/priority")
+async def set_priority(p: PriorityIn):
+    """Hermes assigns/updates a task's P0..P4 priority (overlay, not the sheet)."""
+    with db.get_conn() as conn:
+        conn.execute(
+            "INSERT INTO task_priorities(task_id,scope,level,source,why,ts) VALUES(?,?,?, 'hermes',?,?) "
+            "ON CONFLICT(task_id,scope) DO UPDATE SET level=excluded.level, source='hermes', "
+            "why=excluded.why, ts=excluded.ts",
+            (p.task_id, p.scope, p.level, p.why, _now()))
+    rec = {"task_id": p.task_id, "scope": p.scope, "level": p.level, "source": "hermes", "why": p.why}
+    await _broadcast({"type": "priority", "priority": rec})
+    return {"ok": True, "priority": rec}
+
+
+def get_priorities(scope: str) -> dict:
+    """task_id -> {level, source, why} for Hermes-assigned priorities in this scope."""
+    with db.get_conn() as conn:
+        rows = conn.execute(
+            "SELECT task_id, level, source, why FROM task_priorities WHERE scope=?", (scope,)).fetchall()
+    return {r["task_id"]: {"level": r["level"], "source": r["source"], "why": r["why"]} for r in rows}
+
+
+def seed_priorities_if_empty() -> None:
+    """Seed a few Hermes-decided priorities so the overlay is populated (mock)."""
+    with db.get_conn() as conn:
+        if conn.execute("SELECT COUNT(*) c FROM task_priorities").fetchone()["c"]:
+            return
+        seeds = [
+            ("w-t1", "work", 4, "RFI blocks the L2 rough-in sequence — top of the stack"),
+            ("w-t4", "work", 4, "Manpower deliverable due in 3d and gates the crew plan"),
+            ("w-t2", "work", 3, "GC response drives schedule recovery"),
+            ("p-t4", "personal", 3, "Quarterly taxes — hard external deadline"),
+            ("p-t1", "personal", 2, "Passport has runway but is trip-critical"),
+        ]
+        for tid, scope, lvl, why in seeds:
+            conn.execute("INSERT INTO task_priorities(task_id,scope,level,source,why,ts) "
+                         "VALUES(?,?,?, 'hermes',?,?)", (tid, scope, lvl, why, _now()))
 
 
 def seed_if_empty() -> None:

@@ -376,8 +376,41 @@ var AGENT_META={
   cowork:{label:'Cowork',color:'#ec4899',where:'Windows'}
 };
 
+/* ---- Priority overlay (P0..P4, P4 highest) — Hermes-decided, NOT in the sheet ---- */
+var PRIORITY_SEED={'w-t1':4,'w-t4':4,'w-t2':3,'p-t4':3,'p-t1':2}; // mock Hermes calls
+var PRIO_COLOR=['#64748b','#3b82f6','#eab308','#f97316','#ef4444']; // index = level
+function prioOf(t){
+  if(t._prio!=null) return {level:t._prio,source:'you'};
+  if(PRIORITY_SEED[t.id]!=null) return {level:PRIORITY_SEED[t.id],source:'hermes'};
+  var band=riskOf(t).band; var lvl={red:4,amber:3,green:1,done:0}[band]; if(lvl==null)lvl=2;
+  return {level:lvl,source:'rules'};
+}
+function prioBadge(p){
+  var c=PRIO_COLOR[p.level]; var mark=p.source==='hermes'?'✦ ':(p.source==='you'?'✎ ':'');
+  var tip=p.source==='rules'?'auto (rules-derived)':p.source==='hermes'?'Hermes-decided':'you set this';
+  return '<span class="pill" title="'+tip+'" style="color:'+c+';background:'+c+'22;border:1px solid '+c+'55;font-weight:700;'+(p.source==='rules'?'opacity:.7':'')+'">'+mark+'P'+p.level+'</span>';
+}
+var SORTS=[['prio','Priority P4→P0'],['az','A → Z'],['za','Z → A'],['due','Due date'],['none','Sheet order']];
+function sortRows(rows){
+  var s=S.sort, r=rows.slice();
+  if(s==='az') return r.sort(function(a,b){return (a.description||'').toLowerCase()<(b.description||'').toLowerCase()?-1:1;});
+  if(s==='za') return r.sort(function(a,b){return (a.description||'').toLowerCase()>(b.description||'').toLowerCase()?-1:1;});
+  if(s==='prio') return r.sort(function(a,b){return prioOf(b).level-prioOf(a).level || scoreOf(b).score-scoreOf(a).score;});
+  if(s==='due') return r.sort(function(a,b){return (a.due||'99/99')<(b.due||'99/99')?-1:1;});
+  return r;
+}
+function uniqueCats(sc){
+  var seen={},out=[]; (MOCK.tasks[sc]||[]).concat(S.extra[sc]||[]).forEach(function(t){if(t.category&&!seen[t.category]){seen[t.category]=1;out.push(t.category);}});
+  if(out.indexOf('Inbox')<0)out.push('Inbox'); return out.sort();
+}
+function siteContexts(){
+  var seen={},out=['Off-site'];
+  ['personal','work'].forEach(function(sc){(MOCK.tasks[sc]||[]).forEach(function(t){if(/Project/i.test(t.category||'')&&!seen[t.category]){seen[t.category]=1;out.push(t.category);}});});
+  return out;
+}
+
 /* ============================ STATE ============================ */
-var S={scope:'personal',view:'home',filter:'all',log:[],extra:{personal:[],work:[]},nudges:{},rearmed:{},hermesLive:[],hdismiss:{},agentSel:'hermes',consoleHist:false};
+var S={scope:'personal',view:'home',filter:'all',sort:'prio',context:'Off-site',log:[],extra:{personal:[],work:[]},nudges:{},rearmed:{},hermesLive:[],hdismiss:{},agentSel:'hermes',consoleHist:false};
 function accent(){return S.scope==='personal'?'#34d399':'#f59e0b'}
 
 /* ============================ RENDER ============================ */
@@ -582,17 +615,19 @@ function tasks(){
     if(S.filter==='mine')return t.ball_in_court==='Me'&&t.status!=='completed';
     return t.action===S.filter;
   });
+  rows=sortRows(rows);
   var opts=Object.keys(ACTION_LABEL).map(function(k){return '<option value="'+k+'">'+ACTION_LABEL[k]+'</option>'}).join('');
   var chips=FILTERS.map(function(f){
     var on=S.filter===f[0]; var extra=(f[0]!=='all'&&f[0]!=='mine')?' <span style="color:'+(on?'#000':ACTION_SPINE[f[0]])+'">●</span>':'';
     return '<button class="chip '+(on?'on':'')+'" data-filter="'+f[0]+'" style="'+(on?'background:'+a+';border-color:'+a:'')+'">'+f[1]+extra+'</button>';
   }).join('');
-  var head=['!','Description','Start','Follow-up','Due','Owner','Ball in Court','Category','Subcategory','Action','Status','Risk'].map(function(x){return '<th>'+x+'</th>'}).join('');
+  var head=['!','Prio','Description','Start','Follow-up','Due','Owner','Ball in Court','Category','Subcategory','Action','Status','Risk'].map(function(x){return '<th>'+x+'</th>'}).join('');
   var body=rows.map(function(t){
     var bic=t.ball_in_court==='Me'?'<b style="color:'+a+'">Me</b>':'<span class="mut">'+esc(t.ball_in_court)+'</span>';
     var rk=riskOf(t); var bang=rk.bang?'!':t.bang;
     var dueColor=rk.band==='red'?RISK_COLOR.red:rk.band==='amber'?RISK_COLOR.amber:'inherit';
     return '<tr><td class="spine" style="--c:'+ACTION_SPINE[t.action]+';padding-left:0"><span style="padding-left:8px;font-weight:700;color:#ef4444">'+esc(bang)+'</span></td>'+
+      '<td>'+prioBadge(prioOf(t))+'</td>'+
       '<td style="max-width:280px"><span class="'+(t.status==='completed'?'strike':'')+'">'+esc(t.description)+'</span></td>'+
       '<td class="mut tnum">'+esc(t.start)+'</td><td class="mut tnum">'+esc(t.followup||'—')+'</td><td class="tnum" style="color:'+dueColor+'">'+esc(t.due||'—')+'</td>'+
       '<td class="mut">'+esc(t.owner)+'</td><td>'+bic+'</td><td class="mut">'+esc(t.category)+'</td><td class="mut">'+esc(t.subcategory||'—')+'</td>'+
@@ -605,16 +640,31 @@ function tasks(){
     var rk=riskOf(t); var bang=rk.bang?'!':t.bang;
     return '<div class="card spine" style="--c:'+ACTION_SPINE[t.action]+';margin-bottom:8px;position:relative">'+
       '<span class="dot2" title="'+esc(rk.reason)+'" style="position:absolute;top:12px;right:12px;background:'+RISK_COLOR[rk.band]+';box-shadow:0 0 6px '+RISK_COLOR[rk.band]+'"></span>'+
-      '<div class="row" style="gap:6px;padding-right:16px">'+(bang?'<b style="color:#ef4444">!</b>':'')+'<span style="font-size:13px;font-weight:500" class="'+(t.status==='completed'?'strike':'')+'">'+esc(t.description)+'</span></div>'+
+      '<div class="row" style="gap:6px;padding-right:16px">'+prioBadge(prioOf(t))+(bang?'<b style="color:#ef4444">!</b>':'')+'<span style="font-size:13px;font-weight:500" class="'+(t.status==='completed'?'strike':'')+'">'+esc(t.description)+'</span></div>'+
       '<div class="xs mut tnum" style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:4px"><span style="color:'+(rk.band==='red'?RISK_COLOR.red:rk.band==='amber'?RISK_COLOR.amber:'inherit')+'">Due '+esc(t.due||'—')+'</span><span>F/U '+esc(t.followup||'—')+'</span><span>'+esc(t.category)+(t.subcategory?' · '+esc(t.subcategory):'')+'</span></div>'+
       '<div class="row" style="gap:8px;margin-top:6px"><span class="xs" style="color:'+ACTION_SPINE[t.action]+'"><span class="dot" style="background:'+ACTION_SPINE[t.action]+'"></span> '+ACTION_LABEL[t.action]+'</span>'+
       '<span class="xs mut"><span class="dot" style="background:'+STATUS[t.status].dot+'"></span> '+STATUS[t.status].label+'</span><span class="xs" style="margin-left:auto">'+bic+'</span></div></div>';
   }).join('');
 
+  var catDef=(S.context&&S.context!=='Off-site')?S.context:'Inbox';
+  var cats=uniqueCats(sc); if(cats.indexOf(catDef)<0) cats.unshift(catDef);
+  var catOpts=cats.map(function(c){return '<option value="'+esc(c)+'"'+(c===catDef?' selected':'')+'>'+esc(c)+'</option>';}).join('');
+  var prioOpts='<option value="">P —</option>'+[0,1,2,3,4].map(function(i){return '<option value="'+i+'">P'+i+(i===4?' ▲ highest':i===0?' lowest':'')+'</option>';}).join('');
+  var ctxOpts=siteContexts().map(function(c){return '<option value="'+esc(c)+'"'+(c===S.context?' selected':'')+'>'+esc(c)+'</option>';}).join('');
+  var sortOpts=SORTS.map(function(s){return '<option value="'+s[0]+'"'+(s[0]===S.sort?' selected':'')+'>'+s[1]+'</option>';}).join('');
+  var onSite=S.context&&S.context!=='Off-site';
   return '<div>'+
-    '<form data-add="1" class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:12px">'+
-      '<input class="field" name="desc" placeholder="Quick-add a task… (writes via the sheet adapter)" style="flex:1;min-width:200px;padding:8px 12px;font-size:13px">'+
-      '<select class="field" name="act" style="padding:8px">'+opts+'</select>'+
+    '<div class="row" style="flex-wrap:wrap;gap:10px;margin-bottom:8px;align-items:center">'+
+      '<span class="xs mut">📍 On site:</span>'+
+      '<select class="field" data-ctx style="padding:6px">'+ctxOpts+'</select>'+
+      (onSite?'<span class="xs" style="color:'+a+'">→ new tasks auto-file under '+esc(S.context)+'</span>':'<span class="xs mut">off-site → tasks default to Inbox</span>')+
+      '<span style="margin-left:auto" class="xs mut">Sort</span>'+
+      '<select class="field" data-sort style="padding:6px">'+sortOpts+'</select></div>'+
+    '<form data-add="1" class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">'+
+      '<input class="field" name="desc" placeholder="Quick-add a task…" style="flex:1;min-width:180px;padding:8px 12px;font-size:13px">'+
+      '<select class="field" name="cat" style="padding:8px" title="Category / project">'+catOpts+'</select>'+
+      '<select class="field" name="act" style="padding:8px" title="Action type">'+opts+'</select>'+
+      '<select class="field" name="prio" style="padding:8px" title="Priority (P4 highest)">'+prioOpts+'</select>'+
       '<button class="btn-acc" style="width:auto;padding:8px 16px;font-size:13px">Add</button></form>'+
     '<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">'+chips+'<span class="small mut" style="margin-left:auto;align-self:center">'+rows.length+' shown</span></div>'+
     '<div class="row xs mut" style="gap:14px;flex-wrap:wrap;margin-bottom:12px">'+
@@ -708,8 +758,15 @@ document.addEventListener('submit',function(e){
   if(f.getAttribute('data-console')){e.preventDefault();var v=f.msg.value.trim();if(v){consoleSend(v);f.reset();}return;}
   if(f.getAttribute('data-cap')){e.preventDefault();var v=f.cap.value.trim();if(v){showToast('Captured: '+v);}f.reset();return;}
   if(f.getAttribute('data-add')){e.preventDefault();var d=f.desc.value.trim();if(d){
-    S.extra[S.scope].unshift({id:'new-'+Date.now(),bang:'',description:d,start:'06/25',followup:'',due:'',owner:'Gavin',ball_in_court:'Me',category:'Inbox',subcategory:'',action:f.act.value,status:'not_started'});
-    showToast('Added (mock write → sheet): '+d);}f.reset();render();return;}
+    var cat=f.cat?f.cat.value:'Inbox'; var prio=f.prio?f.prio.value:'';
+    var t={id:'new-'+Date.now(),bang:'',description:d,start:'06/26',followup:'',due:'',owner:'Gavin',ball_in_court:'Me',category:cat,subcategory:'',action:f.act.value,status:'not_started'};
+    if(prio!=='') t._prio=parseInt(prio,10);
+    S.extra[S.scope].unshift(t);
+    showToast('Added: '+d+' ['+cat+(prio!==''?' · P'+prio:'')+']');}f.reset();render();return;}
+});
+document.addEventListener('change',function(e){
+  var ctx=e.target.closest('[data-ctx]'); if(ctx){S.context=ctx.value;render();return;}
+  var srt=e.target.closest('[data-sort]'); if(srt){S.sort=srt.value;render();return;}
 });
 function say(who,text){S.log.push({who:who,text:text})}
 function sayBot(){S.log.push({who:'WOM',text:'Got it — in mock mode I only simulate actions. Wire creds (see NEEDS-FROM-YOU.md) to go live.'})}
