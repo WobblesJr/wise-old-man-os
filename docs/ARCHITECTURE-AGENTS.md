@@ -57,6 +57,14 @@ on the board in <2s with no refresh.
 **To go live:** Hermes (VM) just calls `POST /api/agent/signal` whenever it forms a belief (and reads
 `/api/agent/signals` for state). Same contract; only the caller changes from a test to Hermes.
 
+## Shared multi-agent console (built)
+The bottom console is a **switch**: you pick who you're addressing — Hermes (VM · orchestrator),
+Claude Code (Windows), or Cowork (Windows) — and everyone writes to **one shared stream**
+(`console_messages`), broadcast over the same SSE bus. Shared storage means each agent sees what the
+others are doing; Hermes can dispatch Claude Code and the exchange is visible to you in the same log.
+Endpoints: `POST /api/console/message`, `GET /api/console/messages`. To go live, each real agent
+posts its own lines via the POST endpoint instead of the mock canned replies.
+
 ## What's built vs. needed
 **Build now (mock, this repo):** the `delegations` table + endpoints (create/list/approve-output) + a
 mock runner that flips queued→running→done and stages a sample approval; the band badge + drawer.

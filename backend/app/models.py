@@ -55,3 +55,11 @@ class AgentSignalIn(BaseModel):
     target_task_id: Optional[str] = None
     confidence: Optional[int] = None      # 0..100
     provenance: str = "hermes"
+
+
+class ConsoleMessageIn(BaseModel):
+    """A message into the shared multi-agent console."""
+    text: str
+    to_agent: str = Field(default="hermes", pattern="^(hermes|claude-code|cowork)$")
+    agent: str = "you"                    # who is speaking (default: the user)
+    scope: Optional[str] = "work"

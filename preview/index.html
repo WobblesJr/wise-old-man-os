@@ -147,6 +147,8 @@ tbody tr:hover{background:rgba(16,20,29,.6)}
 .mic{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;color:var(--mut)}
 .mic:hover{color:#fff}
 .send{padding:0 12px;height:32px;border-radius:8px;background:var(--accent);color:var(--ink-950);font-weight:600;font-size:12px}
+.achip{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--mut);display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.achip:hover{color:#fff}
 
 /* mobile nav + toast */
 .mnav{display:none;border-top:1px solid var(--line);background:var(--ink-950)}
@@ -367,8 +369,15 @@ function hermesFor(scope){
 }
 var KIND_LABEL={belief:'believes',decision:'decided',reprioritize:'re-prioritized',insight:'noticed',note:'note',alert:'alert'};
 
+/* ---- Multi-agent console: switch who you talk to; all share one stream/storage ---- */
+var AGENT_META={
+  hermes:{label:'Hermes',color:'#a855f7',where:'VM · orchestrator'},
+  'claude-code':{label:'Claude Code',color:'#38bdf8',where:'Windows'},
+  cowork:{label:'Cowork',color:'#ec4899',where:'Windows'}
+};
+
 /* ============================ STATE ============================ */
-var S={scope:'personal',view:'home',filter:'all',log:[],extra:{personal:[],work:[]},nudges:{},rearmed:{},hermesLive:[],hdismiss:{}};
+var S={scope:'personal',view:'home',filter:'all',log:[],extra:{personal:[],work:[]},nudges:{},rearmed:{},hermesLive:[],hdismiss:{},agentSel:'hermes',consoleHist:false};
 function accent(){return S.scope==='personal'?'#34d399':'#f59e0b'}
 
 /* ============================ RENDER ============================ */
@@ -382,6 +391,7 @@ function render(){
     mnav()+consoleBar()+'</div>'+(S.toast?toast():'');
   var m=document.querySelector('#main .wrap');
   if(m&&m.firstChild&&m.firstChild.classList) m.firstChild.classList.add('fade');
+  var cl=document.querySelector('.console .log'); if(cl) cl.scrollTop=cl.scrollHeight;
 }
 
 function sidebar(){
@@ -651,14 +661,26 @@ function cockpit(){
 
 /* ---------- console + toast ---------- */
 function consoleBar(){
-  var a=accent();
+  var a=accent(); var sel=S.agentSel; var meta=AGENT_META[sel];
+  var chips=Object.keys(AGENT_META).map(function(id){var m=AGENT_META[id];var on=id===sel;
+    return '<button type="button" class="achip" data-agentsel="'+id+'" style="'+(on?'background:'+m.color+'22;border-color:'+m.color+';color:#fff':'')+'"><span class="dot" style="background:'+m.color+'"></span>'+m.label+'</button>';
+  }).join('');
   var log=S.log.length?'<div class="log">'+S.log.map(function(m){
-    return '<div class="line"><span style="flex:0 0 auto;color:'+(m.who==='you'?a:'#8a94a6')+'">'+(m.who==='you'?'you':'WOM')+'</span><span style="color:#cbd2dd">'+esc(m.text)+'</span></div>';
+    var label,color;
+    if(m.who==='you'){label='you'+(m.to&&AGENT_META[m.to]?' → '+AGENT_META[m.to].label:'');color=a;}
+    else if(m.agent&&AGENT_META[m.agent]){label=AGENT_META[m.agent].label;color=AGENT_META[m.agent].color;}
+    else {label='WOM';color='#8a94a6';}
+    return '<div class="line"><span style="flex:0 0 auto;font-weight:600;color:'+color+'">'+esc(label)+'</span><span style="color:#cbd2dd">'+esc(m.text)+'</span></div>';
   }).join('')+'</div>':'';
-  return '<div class="console"><div class="wrap">'+log+'<form data-console="1"><span class="mut">›</span>'+
-    '<input name="msg" placeholder="Ask Wise Old Man…  (persistent console — every view)">'+
+  return '<div class="console"><div class="wrap">'+
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">'+
+      '<span class="xs mut">talk to</span>'+chips+
+      '<span class="xs mut" style="margin-left:auto">shared console · all agents see this</span></div>'+
+    log+
+    '<form data-console="1"><span class="dot" style="background:'+meta.color+'"></span>'+
+    '<input name="msg" placeholder="Ask '+meta.label+' ('+meta.where+')…">'+
     '<button type="button" class="mic" data-mic="1" title="Voice (placeholder)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4"/></svg></button>'+
-    '<button class="send">Send</button></form></div></div>';
+    '<button class="send" style="background:'+meta.color+'">Send</button></form></div></div>';
 }
 function toast(){return '<div class="toast">'+esc(S.toast)+'</div>'}
 
@@ -669,6 +691,7 @@ function wire(){
 document.addEventListener('click',function(e){
   var el=e.target.closest('[data-view]'); if(el){S.view=el.getAttribute('data-view');render();return;}
   var sc=e.target.closest('[data-scope]'); if(sc){S.scope=sc.getAttribute('data-scope');render();return;}
+  var asel=e.target.closest('[data-agentsel]'); if(asel){S.agentSel=asel.getAttribute('data-agentsel');render();return;}
   var ft=e.target.closest('[data-filter]'); if(ft){S.filter=ft.getAttribute('data-filter');render();return;}
   var ac=e.target.closest('[data-act="toast"]'); if(ac){showToast(ac.getAttribute('data-msg'));return;}
   var ch=e.target.closest('[data-chase]'); if(ch){var id=ch.getAttribute('data-chase');
@@ -678,11 +701,11 @@ document.addEventListener('click',function(e){
     S.hdismiss[id]=true; hsigResolve(id,'act'); showToast('Acting on Hermes’ call: '+ha.getAttribute('data-hsig-title')); return;}
   var hd=e.target.closest('[data-hsig-dismiss]'); if(hd){var id2=hd.getAttribute('data-hsig-dismiss');
     S.hdismiss[id2]=true; hsigResolve(id2,'dismiss'); showToast('Dismissed Hermes signal'); return;}
-  var mic=e.target.closest('[data-mic]'); if(mic){say('you','🎙️ (voice input placeholder)');sayBot();render();return;}
+  var mic=e.target.closest('[data-mic]'); if(mic){consoleSend('🎙️ (voice input placeholder)');return;}
 });
 document.addEventListener('submit',function(e){
   var f=e.target;
-  if(f.getAttribute('data-console')){e.preventDefault();var v=f.msg.value.trim();if(v){say('you',v);sayBot();f.reset();render();}return;}
+  if(f.getAttribute('data-console')){e.preventDefault();var v=f.msg.value.trim();if(v){consoleSend(v);f.reset();}return;}
   if(f.getAttribute('data-cap')){e.preventDefault();var v=f.cap.value.trim();if(v){showToast('Captured: '+v);}f.reset();return;}
   if(f.getAttribute('data-add')){e.preventDefault();var d=f.desc.value.trim();if(d){
     S.extra[S.scope].unshift({id:'new-'+Date.now(),bang:'',description:d,start:'06/25',followup:'',due:'',owner:'Gavin',ball_in_court:'Me',category:'Inbox',subcategory:'',action:f.act.value,status:'not_started'});
@@ -703,22 +726,49 @@ function hsigResolve(id,decision){
   if((''+id).indexOf('seed-')===0) return;
   try{ fetch('/api/agent/signal/'+id+'/'+decision,{method:'POST'}); }catch(e){}
 }
-/* live wire to the HERMES layer — agent beliefs arrive in real time */
+/* send into the shared multi-agent console (routes to the selected agent) */
+function consoleSend(text){
+  var to=S.agentSel;
+  if(location.protocol.indexOf('http')===0){
+    try{ fetch('/api/console/message',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:text,to_agent:to,scope:S.scope})}); }catch(e){}
+    // the SSE stream echoes your line + the agent's reply back into the shared log
+  }else{
+    S.log.push({who:'you',text:text,to:to});
+    S.log.push({who:'agent',agent:to,text:AGENT_META[to].label+' (mock): on it — shared with the other agents.'});
+    render();
+  }
+}
+/* live wire to the shared bus — Hermes beliefs + console messages arrive in real time */
 function connectHermes(){
   if(location.protocol.indexOf('http')!==0 || typeof EventSource==='undefined') return;
   try{
     var es=new EventSource('/api/agent/stream?scope=both');
     es.onmessage=function(ev){
       var d; try{ d=JSON.parse(ev.data); }catch(e){ return; }
-      if(d.type==='agent_signal'){ S.hermesLive.unshift(d.signal); flash('✦ Hermes: '+d.signal.title); }
+      if(d.type==='agent_signal'){ S.hermesLive.unshift(d.signal);
+        S.log.push({who:'agent',agent:'hermes',text:'✦ '+d.signal.title}); flash('✦ Hermes: '+d.signal.title); }
       else if(d.type==='agent_resolve'){ S.hdismiss[d.id]=true; render(); }
+      else if(d.type==='console_message'){ var m=d.msg;
+        S.log.push({who:(m.agent==='you'?'you':'agent'),agent:(m.agent==='you'?null:m.agent),to:m.to_agent,text:m.text});
+        render(); }
     };
   }catch(e){}
+}
+/* pull recent shared-console history on load (served mode) */
+function loadConsoleHistory(){
+  if(location.protocol.indexOf('http')!==0 || S.consoleHist) return; S.consoleHist=true;
+  fetch('/api/console/messages?limit=20').then(function(r){return r.json();}).then(function(d){
+    (d.messages||[]).forEach(function(m){ S.log.push({who:(m.agent==='you'?'you':'agent'),
+      agent:(m.agent==='you'?null:m.agent),to:m.to_agent,text:m.text}); });
+    render();
+  }).catch(function(){});
 }
 
 /* ============================ BOOT ============================ */
 render();
 connectHermes();
+loadConsoleHistory();
 if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
   navigator.serviceWorker.register('/preview/sw.js').catch(function(){});
 }

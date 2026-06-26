@@ -101,6 +101,17 @@ CREATE TABLE IF NOT EXISTS actions_log (
     created_at  TEXT NOT NULL
 );
 
+-- Shared multi-agent console: one stream all agents read/write (Hermes ⇄ Claude Code ⇄
+-- Cowork ⇄ you). Shared storage = everyone sees what everyone else is doing.
+CREATE TABLE IF NOT EXISTS console_messages (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts        TEXT NOT NULL,
+    scope     TEXT,
+    agent     TEXT NOT NULL,        -- who wrote it: you | hermes | claude-code | cowork
+    to_agent  TEXT,                 -- who it's addressed to (nullable)
+    text      TEXT NOT NULL
+);
+
 -- The HERMES layer: agent-authored beliefs/decisions posted in real time, distinct from
 -- the deterministic rules engine (risk/chaser/warboard). provenance tags who authored it.
 CREATE TABLE IF NOT EXISTS agent_signals (

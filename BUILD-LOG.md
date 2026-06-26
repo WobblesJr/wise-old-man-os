@@ -150,4 +150,18 @@ Reverse-chronological log of what got built, by an autonomous session.
   no refresh), becomes the top signal, flashes a toast. Dashboard bundle carries hermes_signals.
 - To go live: Hermes (VM) just calls `POST /api/agent/signal`. See docs/ARCHITECTURE-AGENTS.md.
 
+### Multi-agent shared console — DONE, verified
+- The bottom console bar now switches between agents: **Hermes** (VM · orchestrator),
+  **Claude Code** (Windows), **Cowork** (Windows) — each with its own color; placeholder +
+  send button re-target/recolor per selection.
+- Backend: `console_messages` table + `POST /api/console/message` (+ mock role-aware reply) +
+  `GET /api/console/messages`, broadcast over the SAME SSE bus as the Hermes layer
+  (`backend/app/routers/agent.py` → `console_router`). Shared storage = every agent reads/writes
+  one stream and sees the others.
+- Preview: agent switcher chips, lines tagged `you → <agent>` / `<agent>`, live via SSE,
+  history pulled on load, console auto-scrolls. Standalone (file://) falls back to local echo.
+- **Verified (DOM)**: send to Claude Code → round-trips via SSE into the shared log; switching
+  agents re-targets; persisted history from a different writer shows up (proves shared storage).
+- To go live: each real agent posts its lines via `POST /api/console/message`.
+
 <!-- newest entries go ABOVE this line as work proceeds -->

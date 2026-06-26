@@ -15,9 +15,19 @@ from fastapi import APIRouter, Query, Request
 from fastapi.responses import StreamingResponse
 
 from .. import db
-from ..models import AgentSignalIn
+from ..models import AgentSignalIn, ConsoleMessageIn
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
+console_router = APIRouter(prefix="/api/console", tags=["console"])
+
+# Canned, role-aware replies (mock). Real agents replace these by posting their own lines.
+_AGENT_REPLY = {
+    "hermes": "Hermes (orchestrator · VM): on it — I'll plan this and route any build/coding work "
+              "to Claude Code, then surface results here for your approval.",
+    "claude-code": "Claude Code (on your Windows machine): working in the repo — I'll stage anything "
+                   "that changes files as an approval. Hermes can see this in shared storage.",
+    "cowork": "Cowork (on your Windows machine): I'll pair on this and keep Hermes in the loop.",
+}
 
 # In-process pub/sub. Each SSE client gets a Queue; POSTs broadcast to all.
 _subscribers: set[asyncio.Queue] = set()
@@ -107,6 +117,36 @@ async def stream(request: Request, scope: str = Query("both")):
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@console_router.post("/message")
+async def post_console(msg: ConsoleMessageIn):
+    """Write into the shared multi-agent console; broadcast + a mock reply from the addressee."""
+    def _store(agent: str, to_agent, text: str) -> dict:
+        now = _now()
+        with db.get_conn() as conn:
+            cur = conn.execute(
+                "INSERT INTO console_messages(ts,scope,agent,to_agent,text) VALUES(?,?,?,?,?)",
+                (now, msg.scope, agent, to_agent, text))
+            mid = cur.lastrowid
+        return {"id": mid, "ts": now, "scope": msg.scope, "agent": agent,
+                "to_agent": to_agent, "text": text}
+
+    you = _store(msg.agent, msg.to_agent, msg.text)
+    await _broadcast({"type": "console_message", "msg": you})
+    reply = _store(msg.to_agent, msg.agent,
+                   _AGENT_REPLY.get(msg.to_agent, "(no agent connected — mock)"))
+    await _broadcast({"type": "console_message", "msg": reply})
+    return {"ok": True, "you": you, "reply": reply}
+
+
+@console_router.get("/messages")
+def list_console(scope: str = Query("work"), limit: int = 40):
+    with db.get_conn() as conn:
+        rows = conn.execute(
+            "SELECT id, ts, scope, agent, to_agent, text FROM console_messages "
+            "ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+    return {"messages": [dict(r) for r in reversed(rows)]}
 
 
 def seed_if_empty() -> None:

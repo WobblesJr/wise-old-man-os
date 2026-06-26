@@ -29,7 +29,7 @@ app.add_middleware(
 )
 
 for r in (panels.router, tasks.router, approvals.router, capture.router,
-          usage.router, actions.router, agent.router):
+          usage.router, actions.router, agent.router, agent.console_router):
     app.include_router(r)
 
 
