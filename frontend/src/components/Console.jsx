@@ -16,6 +16,7 @@ export default function Console() {
 
   return (
     <div className="border-t border-line bg-ink-950/90 backdrop-blur px-3 sm:px-5 py-2">
+     <div className="max-w-[1360px] mx-auto">
       {log.length > 0 && (
         <div className="max-h-28 overflow-y-auto mb-1.5 space-y-1">
           {log.map((m, i) => (
@@ -45,6 +46,7 @@ export default function Console() {
         <button className="px-3 h-8 rounded-lg text-[12px] font-semibold text-ink-950"
           style={{ background: accent }}>Send</button>
       </form>
+     </div>
     </div>
   )
 }
