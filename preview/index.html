@@ -125,7 +125,22 @@ tbody td{padding:8px 10px;border-bottom:1px solid var(--ink-850);vertical-align:
 tbody tr:hover{background:rgba(16,20,29,.6)}
 .spine{border-left:4px solid var(--c)}
 .strike{text-decoration:line-through;color:var(--mut)}
-.tasktable-wrap{background:var(--ink-900);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.tasktable-wrap{background:var(--ink-900);border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:62vh}
+/* Google-Sheets-style editable grid */
+.gtable{width:100%;border-collapse:separate;border-spacing:0;font-size:12px}
+.gtable th{position:sticky;top:0;z-index:2;background:var(--ink-850);border-bottom:1px solid var(--line);border-right:1px solid var(--ink-800);
+  padding:6px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);white-space:nowrap;cursor:pointer;user-select:none}
+.gtable th:hover{color:#fff;background:var(--ink-800)}
+.gtable td{border-bottom:1px solid var(--ink-850);border-right:1px solid var(--ink-850);padding:0;vertical-align:middle;white-space:nowrap}
+.gtable tr:hover td{background:rgba(56,189,248,.045)}
+.gcell{padding:5px 8px}
+.gedit{outline:none;cursor:text;min-height:24px;display:block}
+.gedit:hover{background:rgba(255,255,255,.035)}
+.gedit:focus{background:var(--ink-850);box-shadow:inset 0 0 0 2px var(--accent);border-radius:3px}
+.gsel{appearance:none;-webkit-appearance:none;background:transparent;border:0;color:var(--text);font-size:12px;width:100%;padding:5px 8px;cursor:pointer;outline:none}
+.gsel:hover{background:rgba(255,255,255,.035)}
+.gsel:focus{box-shadow:inset 0 0 0 2px var(--accent);border-radius:3px}
+.gtable .strike{text-decoration:line-through;color:var(--mut)}
 .chip{font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);color:var(--mut)}
 .chip.on{color:var(--ink-950);font-weight:600}
 .taskcards{display:none}
@@ -409,8 +424,49 @@ function siteContexts(){
   return out;
 }
 
+/* ---- Google-Sheets-style grid: column registry mirrors the sheet; "!" = priority ---- */
+var TASK_COLS=[
+  {key:'prio',label:'!',type:'prio',w:54,title:'Priority (P4 highest) — Hermes overlay, not in the sheet'},
+  {key:'description',label:'Description',type:'text',w:300},
+  {key:'start',label:'Start',type:'text',w:84},
+  {key:'followup',label:'Follow-up',type:'text',w:92},
+  {key:'due',label:'Due',type:'text',w:84},
+  {key:'owner',label:'Owner',type:'text',w:84},
+  {key:'ball_in_court',label:'Ball in Court',type:'text',w:124},
+  {key:'category',label:'Category',type:'text',w:124},
+  {key:'subcategory',label:'Subcategory',type:'text',w:114},
+  {key:'action',label:'Action',type:'enum',w:100},
+  {key:'status',label:'Status',type:'enum',w:124},
+  {key:'risk',label:'Risk',type:'risk',w:56,ro:true}
+];
+function effTask(t){var e=S.edits[t.id];return e?Object.assign({},t,e):t;} // apply inline-edit overlay
+function gridSort(rows){
+  var col=S.sortCol; if(!col) return rows; var dir=S.sortDir==='asc'?1:-1;
+  var def=TASK_COLS.filter(function(c){return c.key===col;})[0];
+  return rows.slice().sort(function(A,B){
+    var a=effTask(A),b=effTask(B),va,vb;
+    if(col==='prio'){va=prioOf(a).level;vb=prioOf(b).level;}
+    else if(col==='risk'){va=scoreOf(a).score;vb=scoreOf(b).score;}
+    else {va=(''+(a[col]||'')).toLowerCase();vb=(''+(b[col]||'')).toLowerCase();}
+    return va<vb?-1*dir:va>vb?1*dir:0;
+  });
+}
+function gcell(t,c){
+  var e=effTask(t);
+  if(c.type==='prio'){var p=prioOf(e);var o=[0,1,2,3,4].map(function(i){return '<option value="'+i+'"'+(i===p.level?' selected':'')+'>P'+i+'</option>';}).join('');
+    return '<td class="gcell" style="text-align:center;border-left:4px solid '+ACTION_SPINE[e.action]+'"><select class="gsel" data-edit="prio" data-id="'+t.id+'" style="color:'+PRIO_COLOR[p.level]+';font-weight:700;text-align:center">'+o+'</select></td>';}
+  if(c.type==='enum'){
+    if(c.key==='action'){var oa=Object.keys(ACTION_LABEL).map(function(k){return '<option value="'+k+'"'+(e.action===k?' selected':'')+'>'+ACTION_LABEL[k]+'</option>';}).join('');
+      return '<td><select class="gsel" data-edit="action" data-id="'+t.id+'" style="color:'+ACTION_SPINE[e.action]+'">'+oa+'</select></td>';}
+    var os=Object.keys(STATUS).map(function(k){return '<option value="'+k+'"'+(e.status===k?' selected':'')+'>'+STATUS[k].label+'</option>';}).join('');
+    return '<td><select class="gsel" data-edit="status" data-id="'+t.id+'">'+os+'</select></td>';}
+  if(c.type==='risk'){var rk=riskOf(e);return '<td class="gcell" style="text-align:center"><span class="dot2" title="'+esc(rk.reason)+'" style="background:'+RISK_COLOR[rk.band]+';box-shadow:0 0 6px '+RISK_COLOR[rk.band]+'"></span></td>';}
+  var val=e[c.key]||''; var strike=(c.key==='description'&&e.status==='completed')?' strike':'';
+  return '<td class="gcell gedit'+strike+'" contenteditable="true" data-edit="'+c.key+'" data-id="'+t.id+'" title="click to edit">'+esc(val)+'</td>';
+}
+
 /* ============================ STATE ============================ */
-var S={scope:'personal',view:'home',filter:'all',sort:'prio',context:'Off-site',log:[],extra:{personal:[],work:[]},nudges:{},rearmed:{},hermesLive:[],hdismiss:{},agentSel:'hermes',consoleHist:false};
+var S={scope:'personal',view:'home',filter:'all',sortCol:'prio',sortDir:'desc',context:'Off-site',edits:{},log:[],extra:{personal:[],work:[]},nudges:{},rearmed:{},hermesLive:[],hdismiss:{},agentSel:'hermes',consoleHist:false};
 function accent(){return S.scope==='personal'?'#34d399':'#f59e0b'}
 
 /* ============================ RENDER ============================ */
@@ -611,31 +667,26 @@ function tasks(){
   var sc=S.scope,a=accent();
   var all=S.extra[sc].concat(MOCK.tasks[sc]);
   var rows=all.filter(function(t){
+    var e=effTask(t);
     if(S.filter==='all')return true;
-    if(S.filter==='mine')return t.ball_in_court==='Me'&&t.status!=='completed';
-    return t.action===S.filter;
+    if(S.filter==='mine')return e.ball_in_court==='Me'&&e.status!=='completed';
+    return e.action===S.filter;
   });
-  rows=sortRows(rows);
+  rows=gridSort(rows);
   var opts=Object.keys(ACTION_LABEL).map(function(k){return '<option value="'+k+'">'+ACTION_LABEL[k]+'</option>'}).join('');
   var chips=FILTERS.map(function(f){
     var on=S.filter===f[0]; var extra=(f[0]!=='all'&&f[0]!=='mine')?' <span style="color:'+(on?'#000':ACTION_SPINE[f[0]])+'">●</span>':'';
     return '<button class="chip '+(on?'on':'')+'" data-filter="'+f[0]+'" style="'+(on?'background:'+a+';border-color:'+a:'')+'">'+f[1]+extra+'</button>';
   }).join('');
-  var head=['!','Prio','Description','Start','Follow-up','Due','Owner','Ball in Court','Category','Subcategory','Action','Status','Risk'].map(function(x){return '<th>'+x+'</th>'}).join('');
-  var body=rows.map(function(t){
-    var bic=t.ball_in_court==='Me'?'<b style="color:'+a+'">Me</b>':'<span class="mut">'+esc(t.ball_in_court)+'</span>';
-    var rk=riskOf(t); var bang=rk.bang?'!':t.bang;
-    var dueColor=rk.band==='red'?RISK_COLOR.red:rk.band==='amber'?RISK_COLOR.amber:'inherit';
-    return '<tr><td class="spine" style="--c:'+ACTION_SPINE[t.action]+';padding-left:0"><span style="padding-left:8px;font-weight:700;color:#ef4444">'+esc(bang)+'</span></td>'+
-      '<td>'+prioBadge(prioOf(t))+'</td>'+
-      '<td style="max-width:280px"><span class="'+(t.status==='completed'?'strike':'')+'">'+esc(t.description)+'</span></td>'+
-      '<td class="mut tnum">'+esc(t.start)+'</td><td class="mut tnum">'+esc(t.followup||'—')+'</td><td class="tnum" style="color:'+dueColor+'">'+esc(t.due||'—')+'</td>'+
-      '<td class="mut">'+esc(t.owner)+'</td><td>'+bic+'</td><td class="mut">'+esc(t.category)+'</td><td class="mut">'+esc(t.subcategory||'—')+'</td>'+
-      '<td><span style="color:'+ACTION_SPINE[t.action]+'"><span class="dot" style="background:'+ACTION_SPINE[t.action]+'"></span> '+ACTION_LABEL[t.action]+'</span></td>'+
-      '<td><span class="mut"><span class="dot" style="background:'+STATUS[t.status].dot+'"></span> '+STATUS[t.status].label+'</span></td>'+
-      '<td><span class="dot2" title="'+esc(rk.reason)+'" style="background:'+RISK_COLOR[rk.band]+';box-shadow:0 0 6px '+RISK_COLOR[rk.band]+'"></span></td></tr>';
+  var head=TASK_COLS.map(function(c){
+    var act=S.sortCol===c.key; var arrow=act?(S.sortDir==='asc'?' ▲':' ▼'):'';
+    return '<th data-sortcol="'+c.key+'" style="min-width:'+c.w+'px" title="'+esc(c.title||('Sort by '+c.label))+'">'+esc(c.label)+'<span style="color:'+a+'">'+arrow+'</span></th>';
   }).join('');
-  var cards=rows.map(function(t){
+  var body=rows.map(function(t){
+    return '<tr>'+TASK_COLS.map(function(c){return gcell(t,c);}).join('')+'</tr>';
+  }).join('');
+  var cards=rows.map(function(_t){
+    var t=effTask(_t);
     var bic=t.ball_in_court==='Me'?'<b style="color:'+a+'">Me</b>':'<span class="mut">'+esc(t.ball_in_court)+'</span>';
     var rk=riskOf(t); var bang=rk.bang?'!':t.bang;
     return '<div class="card spine" style="--c:'+ACTION_SPINE[t.action]+';margin-bottom:8px;position:relative">'+
@@ -652,29 +703,26 @@ function tasks(){
   var prioOpts='<option value="">P —</option>'+[0,1,2,3,4].map(function(i){return '<option value="'+i+'">P'+i+(i===4?' ▲ highest':i===0?' lowest':'')+'</option>';}).join('');
   var ctxOpts=siteContexts().map(function(c){return '<option value="'+esc(c)+'"'+(c===S.context?' selected':'')+'>'+esc(c)+'</option>';}).join('');
   var sortOpts=SORTS.map(function(s){return '<option value="'+s[0]+'"'+(s[0]===S.sort?' selected':'')+'>'+s[1]+'</option>';}).join('');
-  var onSite=S.context&&S.context!=='Off-site';
   return '<div>'+
     '<div class="row" style="flex-wrap:wrap;gap:10px;margin-bottom:8px;align-items:center">'+
       '<span class="xs mut">📍 On site:</span>'+
       '<select class="field" data-ctx style="padding:6px">'+ctxOpts+'</select>'+
-      (onSite?'<span class="xs" style="color:'+a+'">→ new tasks auto-file under '+esc(S.context)+'</span>':'<span class="xs mut">off-site → tasks default to Inbox</span>')+
-      '<span style="margin-left:auto" class="xs mut">Sort</span>'+
-      '<select class="field" data-sort style="padding:6px">'+sortOpts+'</select></div>'+
+      '<span class="xs mut" style="margin-left:auto">click a header to sort · click a cell to edit</span></div>'+
     '<form data-add="1" class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">'+
       '<input class="field" name="desc" placeholder="Quick-add a task…" style="flex:1;min-width:180px;padding:8px 12px;font-size:13px">'+
       '<select class="field" name="cat" style="padding:8px" title="Category / project">'+catOpts+'</select>'+
       '<select class="field" name="act" style="padding:8px" title="Action type">'+opts+'</select>'+
       '<select class="field" name="prio" style="padding:8px" title="Priority (P4 highest)">'+prioOpts+'</select>'+
       '<button class="btn-acc" style="width:auto;padding:8px 16px;font-size:13px">Add</button></form>'+
-    '<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">'+chips+'<span class="small mut" style="margin-left:auto;align-self:center">'+rows.length+' shown</span></div>'+
-    '<div class="row xs mut" style="gap:14px;flex-wrap:wrap;margin-bottom:12px">'+
-      '<span>Left bar = <b style="color:#cbd2dd">action type</b></span>'+
+    '<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">'+chips+'<span class="small mut" style="margin-left:auto;align-self:center">'+rows.length+' shown · '+(S.context!=='Off-site'?'on site: '+esc(S.context):'off-site')+'</span></div>'+
+    '<div class="row xs mut" style="gap:14px;flex-wrap:wrap;margin-bottom:10px">'+
+      '<span><b style="color:#cbd2dd">!</b> = priority (P4 highest, ✦ = Hermes)</span>'+
       '<span style="opacity:.5">|</span>'+
-      '<span>Right pip = <b style="color:#cbd2dd">deadline risk</b>:</span>'+
-      '<span><span class="dot" style="background:'+RISK_COLOR.red+'"></span> overdue / ≤2d or stale</span>'+
-      '<span><span class="dot" style="background:'+RISK_COLOR.amber+'"></span> ≤5d / blocked</span>'+
+      '<span>left bar = action type · Risk pip:</span>'+
+      '<span><span class="dot" style="background:'+RISK_COLOR.red+'"></span> overdue/≤2d/stale</span>'+
+      '<span><span class="dot" style="background:'+RISK_COLOR.amber+'"></span> ≤5d/blocked</span>'+
       '<span><span class="dot" style="background:'+RISK_COLOR.green+'"></span> clear</span></div>'+
-    '<div class="tasktable-wrap"><table><thead><tr>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div>'+
+    '<div class="tasktable-wrap"><table class="gtable"><thead><tr>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div>'+
     '<div class="taskcards">'+cards+'</div></div>';
 }
 
@@ -742,6 +790,9 @@ document.addEventListener('click',function(e){
   var el=e.target.closest('[data-view]'); if(el){S.view=el.getAttribute('data-view');render();return;}
   var sc=e.target.closest('[data-scope]'); if(sc){S.scope=sc.getAttribute('data-scope');render();return;}
   var asel=e.target.closest('[data-agentsel]'); if(asel){S.agentSel=asel.getAttribute('data-agentsel');render();return;}
+  var sh=e.target.closest('[data-sortcol]'); if(sh){var k=sh.getAttribute('data-sortcol');
+    if(S.sortCol===k){S.sortDir=S.sortDir==='asc'?'desc':'asc';}else{S.sortCol=k;S.sortDir=(k==='prio'||k==='risk')?'desc':'asc';}
+    render();return;}
   var ft=e.target.closest('[data-filter]'); if(ft){S.filter=ft.getAttribute('data-filter');render();return;}
   var ac=e.target.closest('[data-act="toast"]'); if(ac){showToast(ac.getAttribute('data-msg'));return;}
   var ch=e.target.closest('[data-chase]'); if(ch){var id=ch.getAttribute('data-chase');
@@ -766,8 +817,31 @@ document.addEventListener('submit',function(e){
 });
 document.addEventListener('change',function(e){
   var ctx=e.target.closest('[data-ctx]'); if(ctx){S.context=ctx.value;render();return;}
-  var srt=e.target.closest('[data-sort]'); if(srt){S.sort=srt.value;render();return;}
+  var sel=e.target.closest('select.gsel[data-edit]'); if(sel){commitEdit(sel.getAttribute('data-id'),sel.getAttribute('data-edit'),sel.value);return;}
 });
+/* commit an inline cell edit (contenteditable text) on blur */
+document.addEventListener('focusout',function(e){
+  var c=e.target.closest('.gedit[data-edit]'); if(!c)return;
+  commitEdit(c.getAttribute('data-id'),c.getAttribute('data-edit'),c.textContent.trim());
+});
+/* Enter commits + exits a text cell */
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'){var c=e.target.closest&&e.target.closest('.gedit[data-edit]'); if(c){e.preventDefault();c.blur();}}
+});
+function commitEdit(id,field,value){
+  if(field==='prio'){ S.edits[id]=Object.assign(S.edits[id]||{},{_prio:parseInt(value,10)}); }
+  else { var p={}; p[field]=value; S.edits[id]=Object.assign(S.edits[id]||{},p); }
+  persistEdit(id,field,value);
+  render();
+}
+/* persist to the backend when served (best-effort); file:// stays in-memory */
+function persistEdit(id,field,value){
+  if(location.protocol.indexOf('http')!==0) return;
+  try{
+    if(field==='prio'){ fetch('/api/agent/priority',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope:S.scope,task_id:id,level:parseInt(value,10),why:'set in grid'})}); }
+    else { var patch={}; patch[field]=value; fetch('/api/tasks/'+id+'?scope='+S.scope,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)}); }
+  }catch(e){}
+}
 function say(who,text){S.log.push({who:who,text:text})}
 function sayBot(){S.log.push({who:'WOM',text:'Got it — in mock mode I only simulate actions. Wire creds (see NEEDS-FROM-YOU.md) to go live.'})}
 var toastTimer;
