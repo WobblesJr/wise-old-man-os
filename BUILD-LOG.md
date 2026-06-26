@@ -231,4 +231,14 @@ Reverse-chronological log of what got built, by an autonomous session.
 - Also: `docs/YOUR-GO-LIVE-CHECKLIST.md` — the outside-this-terminal action list (accounts, Cloudflare,
   VM, Windows, storage, Google), grouped + ordered, with the absolute-minimum-to-go-live at the bottom.
 
+### Fix: task grid cells stacking into one cell (illegible rows) — DONE, verified
+- Root cause: `.gedit` set `display:block` on editable `<td>`s, which collapses table layout — every
+  cell rendered at 0,0 (row_height 0), so all values piled into one spot = "multiple cells in one cell"
+  AND unreadable tasks. Single CSS bug behind both complaints.
+- Fix: editable cells stay `table-cell` (removed display:block); added Sheets-like truncate-with-ellipsis
+  + expand-on-focus for long descriptions.
+- Verified (DOM @1280px): table visible, 8 rows, 27px row height, all 12 cells side-by-side in one row,
+  each value in its correct column (! / Description / Start / Follow-up / Due / Owner / Ball-in-Court /
+  Category / Subcategory / Action / Status / Risk).
+
 <!-- newest entries go ABOVE this line as work proceeds -->

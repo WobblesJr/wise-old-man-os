@@ -134,9 +134,13 @@ tbody tr:hover{background:rgba(16,20,29,.6)}
 .gtable td{border-bottom:1px solid var(--ink-850);border-right:1px solid var(--ink-850);padding:0;vertical-align:middle;white-space:nowrap}
 .gtable tr:hover td{background:rgba(56,189,248,.045)}
 .gcell{padding:5px 8px}
-.gedit{outline:none;cursor:text;min-height:24px;display:block}
+/* editable cells stay table-cells (never display:block — that collapses the whole row) */
+.gedit{outline:none;cursor:text}
 .gedit:hover{background:rgba(255,255,255,.035)}
-.gedit:focus{background:var(--ink-850);box-shadow:inset 0 0 0 2px var(--accent);border-radius:3px}
+.gedit:focus{background:var(--ink-850);box-shadow:inset 0 0 0 2px var(--accent)}
+/* keep long descriptions on one tidy line; the grid scrolls horizontally instead of stacking */
+.gtable td{max-width:320px;overflow:hidden;text-overflow:ellipsis}
+.gtable td[data-edit="description"]:focus{overflow:visible;white-space:normal}
 .gsel{appearance:none;-webkit-appearance:none;background:transparent;border:0;color:var(--text);font-size:12px;width:100%;padding:5px 8px;cursor:pointer;outline:none}
 .gsel:hover{background:rgba(255,255,255,.035)}
 .gsel:focus{box-shadow:inset 0 0 0 2px var(--accent);border-radius:3px}
