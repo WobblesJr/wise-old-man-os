@@ -137,4 +137,17 @@ Reverse-chronological log of what got built, by an autonomous session.
 - Vision captured: "living/adaptive" system → registry-driven layout (skills + cron jobs
   declared as data so new ones auto-surface new sections). See docs/WARBOARD-V2-SPEC.md.
 
+### The HERMES layer — real-time agent beliefs on the board — DONE, verified
+- Dual-layer model: deterministic **rules engine** (risk/chaser/warboard, relabeled "rules engine")
+  + the **Hermes layer** (agent judgment), attributed + visually distinct (violet "✦ HERMES").
+- Backend: `agent_signals` table; `backend/app/routers/agent.py` → `POST /api/agent/signal`
+  (Hermes posts a belief), `GET /api/agent/signals`, `POST /api/agent/signal/{id}/{act|dismiss}`,
+  and **`GET /api/agent/stream` (SSE)** real-time broadcast (in-proc pub/sub). Seeded 2 beliefs;
+  added to `/api/dashboard` bundle as `hermes_signals`.
+- Preview: a violet HERMES strip in the War-Board band (kind + confidence% + body + Act/Dismiss),
+  live via `EventSource('/api/agent/stream')`; seeds embedded for standalone (file://) mode.
+- **Verified (DOM)**: seeded belief renders; POSTing a NEW belief arrives **live via SSE** (<2s,
+  no refresh), becomes the top signal, flashes a toast. Dashboard bundle carries hermes_signals.
+- To go live: Hermes (VM) just calls `POST /api/agent/signal`. See docs/ARCHITECTURE-AGENTS.md.
+
 <!-- newest entries go ABOVE this line as work proceeds -->

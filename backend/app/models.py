@@ -44,3 +44,14 @@ class ScheduleIn(BaseModel):
     when: str
     scope: str = Field(default="personal", pattern="^(personal|work)$")
     where: Optional[str] = None
+
+
+class AgentSignalIn(BaseModel):
+    """What Hermes posts to the board — a belief/decision in real time."""
+    scope: str = Field(default="work", pattern="^(personal|work)$")
+    kind: str = Field(default="belief")   # belief|decision|reprioritize|insight|note|alert
+    title: str
+    body: Optional[str] = None
+    target_task_id: Optional[str] = None
+    confidence: Optional[int] = None      # 0..100
+    provenance: str = "hermes"

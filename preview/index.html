@@ -349,8 +349,26 @@ function warboardFor(scope){
   return {headline:parts.join(' · '),top:top,meetings:meetings,stale:stale,highest:hi};
 }
 
+/* ---- The HERMES layer (mirrors backend agent_signals): agent BELIEFS, live via SSE,
+       distinct from the deterministic rules engine above ---- */
+var AGENT_SEED={
+  work:[{id:'seed-w1',kind:'reprioritize',title:'Bank the manpower schedule before the RFI today',
+    body:'GC rarely replies before noon — you’ll be blocked on the RFI anyway. Lock the L3 manpower deliverable in your morning window, then chase the GC after lunch.',
+    confidence:72,target_task_id:'w-t4',provenance:'hermes',scope:'work'}],
+  personal:[{id:'seed-p1',kind:'insight',title:'Your week is front-loaded — guard Thursday morning',
+    body:'4 of 5 hard dates land Mon–Wed. Thursday’s only clear block is your recovery window; don’t let a meeting eat it.',
+    confidence:64,provenance:'hermes',scope:'personal'}]
+};
+function hermesFor(scope){
+  var dis=S.hdismiss||{};
+  var live=S.hermesLive.filter(function(s){return s.scope===scope && !dis[s.id];});
+  var seed=(AGENT_SEED[scope]||[]).filter(function(s){return !dis[s.id];});
+  return live.concat(seed);
+}
+var KIND_LABEL={belief:'believes',decision:'decided',reprioritize:'re-prioritized',insight:'noticed',note:'note',alert:'alert'};
+
 /* ============================ STATE ============================ */
-var S={scope:'personal',view:'home',filter:'all',log:[],extra:{personal:[],work:[]},nudges:{},rearmed:{}};
+var S={scope:'personal',view:'home',filter:'all',log:[],extra:{personal:[],work:[]},nudges:{},rearmed:{},hermesLive:[],hdismiss:{}};
 function accent(){return S.scope==='personal'?'#34d399':'#f59e0b'}
 
 /* ============================ RENDER ============================ */
@@ -489,6 +507,20 @@ function dashboard(){
   var wbHi=wb.highest?'<div class="row" style="gap:8px;margin-top:10px;align-items:center;background:'+a+'14;border:1px solid '+a+'33;border-radius:10px;padding:8px 10px;flex-wrap:wrap">'+
     '<span class="xs" style="font-weight:700;color:'+a+'">→ START WITH</span><span style="font-size:12px;font-weight:500">'+esc(wb.highest.description)+'</span><span class="xs mut">'+esc(wb.highest.reason)+'</span>'+
     '<button class="btn-acc" style="width:auto;padding:5px 12px;margin-left:auto" data-act="toast" data-msg="'+esc('Started: '+wb.highest.description)+'">Start</button></div>':'';
+  // HERMES layer — agent beliefs, visually distinct (violet) from the rules engine above.
+  var HV='#a855f7'; var hsigs=hermesFor(sc); var htop=hsigs[0];
+  var hermesRow=htop?'<div style="margin-top:10px;background:'+HV+'14;border:1px solid '+HV+'40;border-left:3px solid '+HV+';border-radius:10px;padding:8px 10px">'+
+    '<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">'+
+      '<span class="xs" style="font-weight:700;letter-spacing:.1em;color:#c4b5fd;background:'+HV+'22;padding:2px 6px;border-radius:5px">✦ HERMES</span>'+
+      '<span class="xs mut">'+(KIND_LABEL[htop.kind]||htop.kind)+(htop.confidence!=null?' · '+htop.confidence+'% sure':'')+'</span>'+
+      '<span style="font-size:12px;font-weight:600">'+esc(htop.title)+'</span>'+
+      (hsigs.length>1?'<span class="xs mut">+'+(hsigs.length-1)+' more</span>':'')+
+      '<span class="row" style="gap:6px;margin-left:auto">'+
+        '<button class="btn-acc" style="width:auto;padding:4px 10px;background:'+HV+'" data-hsig-act="'+htop.id+'" data-hsig-title="'+esc(htop.title)+'">Act</button>'+
+        '<button class="btn-ghost" style="padding:4px 8px" data-hsig-dismiss="'+htop.id+'">Dismiss</button>'+
+      '</span></div>'+
+      (htop.body?'<div class="small mut" style="margin-top:4px;line-height:1.35">'+esc(htop.body)+'</div>':'')+
+    '</div>':'';
   return '<div class="grid">'+
     '<div class="col-12"><section style="background:linear-gradient(90deg,'+a+'10,var(--ink-900));border:1px solid var(--line);border-left:3px solid '+a+';border-radius:16px;padding:14px 16px">'+
       '<div class="row" style="gap:10px;flex-wrap:wrap;align-items:center">'+
@@ -498,12 +530,12 @@ function dashboard(){
         '<span style="font-size:13px;font-weight:600">'+esc(wb.headline)+'</span>'+
         '<span class="xs mut" style="margin-left:auto">'+wb.meetings.length+' mtgs · '+wb.stale.length+' waiting on others</span>'+
       '</div>'+
-      (wbPips?'<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:10px">'+wbPips+'</div>':'')+wbHi+
+      (wbPips?'<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:10px">'+wbPips+'</div>':'')+wbHi+hermesRow+
     '</section></div>'+
     '<section class="hero"><div class="spaced" style="margin-bottom:12px"><div class="row" style="gap:8px">'+
       '<span class="dot" style="background:'+a+';animation:pulse 2s infinite"></span>'+
       '<span style="font-size:14px;font-weight:600">Suggested next steps</span>'+
-      '<span class="xs mut">agent-generated · '+sc+'</span></div><span class="xs mut">refreshed just now</span></div>'+
+      '<span class="xs mut">rules engine · '+sc+'</span></div><span class="xs mut">refreshed just now</span></div>'+
       '<div class="sug-grid">'+sugCards+'</div></section>'+
 
     '<div class="col-4"><div class="tile"><div class="head"><h3>Approvals</h3><span class="pill" style="color:'+a+';background:'+a+'1f">'+apCount+' pending</span></div><div class="list" style="margin-top:12px">'+apList+'</div></div></div>'+
@@ -642,6 +674,10 @@ document.addEventListener('click',function(e){
   var ch=e.target.closest('[data-chase]'); if(ch){var id=ch.getAttribute('data-chase');
     S.nudges[id]=(S.nudges[id]||0)+1; S.rearmed[id]=true;  // sent + follow-up re-armed -> drops out
     showToast('Nudge drafted + logged; follow-up re-armed'); return;}
+  var ha=e.target.closest('[data-hsig-act]'); if(ha){var id=ha.getAttribute('data-hsig-act');
+    S.hdismiss[id]=true; hsigResolve(id,'act'); showToast('Acting on Hermes’ call: '+ha.getAttribute('data-hsig-title')); return;}
+  var hd=e.target.closest('[data-hsig-dismiss]'); if(hd){var id2=hd.getAttribute('data-hsig-dismiss');
+    S.hdismiss[id2]=true; hsigResolve(id2,'dismiss'); showToast('Dismissed Hermes signal'); return;}
   var mic=e.target.closest('[data-mic]'); if(mic){say('you','🎙️ (voice input placeholder)');sayBot();render();return;}
 });
 document.addEventListener('submit',function(e){
@@ -659,9 +695,30 @@ function showToast(msg){
   S.toast=msg; S.log.push({who:'WOM',text:'✓ '+msg+' (mock — nothing left the machine)'}); render();
   clearTimeout(toastTimer); toastTimer=setTimeout(function(){S.toast=null;render();},2600);
 }
+function flash(msg){ S.toast=msg; render(); clearTimeout(toastTimer); toastTimer=setTimeout(function(){S.toast=null;render();},3000); }
+
+/* resolve a Hermes signal back to the server (act/dismiss); seeds are local-only */
+function hsigResolve(id,decision){
+  if(location.protocol.indexOf('http')!==0) return;
+  if((''+id).indexOf('seed-')===0) return;
+  try{ fetch('/api/agent/signal/'+id+'/'+decision,{method:'POST'}); }catch(e){}
+}
+/* live wire to the HERMES layer — agent beliefs arrive in real time */
+function connectHermes(){
+  if(location.protocol.indexOf('http')!==0 || typeof EventSource==='undefined') return;
+  try{
+    var es=new EventSource('/api/agent/stream?scope=both');
+    es.onmessage=function(ev){
+      var d; try{ d=JSON.parse(ev.data); }catch(e){ return; }
+      if(d.type==='agent_signal'){ S.hermesLive.unshift(d.signal); flash('✦ Hermes: '+d.signal.title); }
+      else if(d.type==='agent_resolve'){ S.hdismiss[d.id]=true; render(); }
+    };
+  }catch(e){}
+}
 
 /* ============================ BOOT ============================ */
 render();
+connectHermes();
 if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
   navigator.serviceWorker.register('/preview/sw.js').catch(function(){});
 }

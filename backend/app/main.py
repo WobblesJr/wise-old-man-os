@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import db, cache
 from .config import settings
-from .routers import panels, tasks, approvals, capture, usage, actions
+from .routers import panels, tasks, approvals, capture, usage, actions, agent
 
 app = FastAPI(title="Wise Old Man OS", version="0.1.0",
               description="Personal+Work command center — running on MOCK data.")
@@ -29,7 +29,7 @@ app.add_middleware(
 )
 
 for r in (panels.router, tasks.router, approvals.router, capture.router,
-          usage.router, actions.router):
+          usage.router, actions.router, agent.router):
     app.include_router(r)
 
 
@@ -37,6 +37,7 @@ for r in (panels.router, tasks.router, approvals.router, capture.router,
 def _startup() -> None:
     db.init_db()
     cache.refresh_all()
+    agent.seed_if_empty()   # seed a couple of Hermes beliefs (mock)
 
 
 @app.get("/api/health")

@@ -100,6 +100,21 @@ CREATE TABLE IF NOT EXISTS actions_log (
     result      TEXT,
     created_at  TEXT NOT NULL
 );
+
+-- The HERMES layer: agent-authored beliefs/decisions posted in real time, distinct from
+-- the deterministic rules engine (risk/chaser/warboard). provenance tags who authored it.
+CREATE TABLE IF NOT EXISTS agent_signals (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts             TEXT NOT NULL,
+    scope          TEXT NOT NULL,
+    kind           TEXT NOT NULL,        -- belief | decision | reprioritize | insight | note | alert
+    title          TEXT NOT NULL,
+    body           TEXT,
+    target_task_id TEXT,                 -- optional: a task this belief is about
+    confidence     INTEGER,              -- 0..100, Hermes's own confidence
+    provenance     TEXT NOT NULL DEFAULT 'hermes',
+    status         TEXT NOT NULL DEFAULT 'active'   -- active | dismissed | acted
+);
 """
 
 

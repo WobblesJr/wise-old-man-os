@@ -21,6 +21,15 @@ def panel(key: str, scope: str = Query("personal", pattern="^(personal|work)$"))
     return {"key": key, "scope": eff_scope, **p}
 
 
+def _hermes_signals(scope: str) -> list:
+    """Live agent-authored signals for the scope (the Hermes layer, not cached)."""
+    with db.get_conn() as conn:
+        rows = conn.execute(
+            "SELECT id, ts, scope, kind, title, body, target_task_id, confidence, provenance, status "
+            "FROM agent_signals WHERE status='active' AND scope=? ORDER BY id DESC", (scope,)).fetchall()
+    return [dict(r) for r in rows]
+
+
 @router.get("/dashboard")
 def dashboard(scope: str = Query("personal", pattern="^(personal|work)$")):
     """Bundle every tile the bento home needs in one call."""
@@ -33,6 +42,7 @@ def dashboard(scope: str = Query("personal", pattern="^(personal|work)$")):
         "mode": settings.DATA_MODE,
         "credentials": settings.credential_status(),
         "warboard": grab("warboard", scope),
+        "hermes_signals": _hermes_signals(scope),
         "suggestions": grab("suggestions", scope),
         "approvals": grab("approvals", scope),
         "today": grab("today", scope),

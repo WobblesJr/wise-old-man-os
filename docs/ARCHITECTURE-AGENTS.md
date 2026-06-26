@@ -39,6 +39,24 @@ delegations: id, scope, agent('claude-code'|'cowork'), job_name, task_id|approva
 So: dispatching is a tap, and applying the result is a tap. "Connected" shows up as one band badge +
 one drawer — never autonomy.
 
+## The two layers: rules engine + Hermes (built)
+The board renders **two distinct layers**, always attributed so you know which is which:
+- **Rules engine (deterministic code):** `risk()` scoring, the chaser, the war-board. Consistent,
+  explainable, always-on baseline. Labeled "rules engine".
+- **Hermes layer (agent judgment):** what Hermes *believes/decides* in real time — reprioritizations,
+  insights, alerts — posted from the VM and shown LIVE, tagged "✦ HERMES" (violet), separate from the
+  rules. Hermes can override/annotate the rules with its own confidence %.
+
+**Channel (built, mock):** `agent_signals` table + `POST /api/agent/signal` (Hermes posts a belief) +
+`GET /api/agent/signals` + `POST /api/agent/signal/{id}/{act|dismiss}` + **`GET /api/agent/stream`
+(SSE)** for real time. Signals also ride the `/api/dashboard` bundle (`hermes_signals`). The dashboard
+opens an `EventSource` and renders a belief the instant it lands; Act/Dismiss resolve back to the server.
+This is how a "very code-centric app" gains live agent judgment. Verified: POST a belief → it appears
+on the board in <2s with no refresh.
+
+**To go live:** Hermes (VM) just calls `POST /api/agent/signal` whenever it forms a belief (and reads
+`/api/agent/signals` for state). Same contract; only the caller changes from a test to Hermes.
+
 ## What's built vs. needed
 **Build now (mock, this repo):** the `delegations` table + endpoints (create/list/approve-output) + a
 mock runner that flips queued→running→done and stages a sample approval; the band badge + drawer.
