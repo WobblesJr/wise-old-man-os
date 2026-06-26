@@ -177,4 +177,17 @@ Reverse-chronological log of what got built, by an autonomous session.
   context=Project Alpha auto-fills the category; quick-add with P4 → task tagged "✎ P4 / Project Alpha".
 - Backend sort verified too (P4-first, az/za). To go live: Hermes calls `POST /api/agent/priority`.
 
+### Durable git-vault storage (GitHub/Obsidian-shaped) — DONE, verified
+- Per the storage design (2 background design agents this session): source of truth = markdown
+  task tables in a git `vault/` (Obsidian-friendly), website = fast cache + manipulate layer.
+- **`backend/app/adapters/git_vault.py` GitVaultStore**: reads/writes `vault/tasks/{scope}.md`
+  GFM tables (id + sheet columns; '!' left blank — priority is the derived overlay), commits each
+  write to the vault git repo (`push` stubbed — Hermes owns remote sync). Same interface as
+  MockSheetTasks → routers/cache unchanged. Seeds the vault from mock + `git init` on first run.
+- Registry selects via `WOM_TASK_STORE` (default **vault**, falls back to mock if git/fs fails).
+  Vault lives at `backend/data/vault/` (its own repo; gitignored from the main repo).
+- Broadened `TaskPatch` so inline grid edits to ANY field persist via PATCH → vault commit.
+- **Verified**: add task → written to `work.md` + committed (`web: add …`) → a FRESH process
+  re-reads it (durable across restarts). The dashboard is now continuously usable on local files.
+
 <!-- newest entries go ABOVE this line as work proceeds -->

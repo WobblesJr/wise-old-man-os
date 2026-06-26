@@ -25,6 +25,7 @@ def _env(key: str, default: str = "") -> str:
 class Settings:
     # --- runtime ---
     DATA_MODE: str = _env("WOM_DATA_MODE", "mock").lower()  # mock | live
+    TASK_STORE: str = _env("WOM_TASK_STORE", "vault").lower()  # vault (durable, git) | mock
     ENV: str = _env("WOM_ENV", "dev")
     HOST: str = _env("WOM_HOST", "127.0.0.1")
     PORT: int = int(_env("WOM_PORT", "8787"))

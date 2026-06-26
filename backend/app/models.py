@@ -21,10 +21,16 @@ class QuickAddTask(BaseModel):
 
 
 class TaskPatch(BaseModel):
+    # any sheet field is editable inline in the grid; all persist via the store
+    description: Optional[str] = None
     status: Optional[str] = None
     ball_in_court: Optional[str] = None
+    owner: Optional[str] = None
+    start: Optional[str] = None
     due: Optional[str] = None
     followup: Optional[str] = None
+    category: Optional[str] = None
+    subcategory: Optional[str] = None
     action: Optional[str] = None
 
 

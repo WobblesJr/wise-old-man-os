@@ -16,6 +16,17 @@ from .memory import MockMemory
 from .discord import MockDiscord
 
 
+def _task_store():
+    """Durable git-vault store by default; falls back to in-memory mock if it can't init."""
+    if settings.TASK_STORE == "vault":
+        try:
+            from .git_vault import GitVaultStore
+            return GitVaultStore()
+        except Exception as e:  # pragma: no cover - git/fs issues degrade to mock
+            print(f"[registry] GitVaultStore unavailable ({e}); using MockSheetTasks")
+    return MockSheetTasks()
+
+
 @dataclass
 class Adapters:
     google: object
@@ -38,7 +49,7 @@ def get_adapters() -> Adapters:
     if settings.is_mock:
         _singleton = Adapters(
             google=MockGooglePersonal(),
-            sheet=MockSheetTasks(),
+            sheet=_task_store(),
             drive=MockDriveBridge(),
             feeds=MockFeeds(),
             memory=MockMemory(),
