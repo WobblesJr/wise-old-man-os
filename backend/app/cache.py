@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from . import db
 from . import risk
 from . import chaser
+from . import warboard
 from .adapters import get_adapters
 from .mock import mock_data as M
 
@@ -107,6 +108,11 @@ def refresh_all() -> dict:
                 "SELECT data FROM approvals WHERE scope=? AND status='pending' ORDER BY origin DESC",
                 (scope,)).fetchall()]
         db.put_panel("approvals", scope, rows, ts)
+
+    # Morning War-Board: one risk() pass per scope -> the brief the hero band renders.
+    # (Data only; the 6am cron calls /api/warboard/run to fan out to Discord + Memory.)
+    for scope in SCOPES:
+        db.put_panel("warboard", scope, warboard.build(scope), ts)
 
     counts["chaser"] = chase_res
     return {"ok": True, "refreshed_at": ts, "counts": counts}

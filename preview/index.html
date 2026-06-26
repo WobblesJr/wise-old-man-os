@@ -318,6 +318,29 @@ function chasesFor(scope){
   });
 }
 
+/* ---- Morning War-Board (mirrors backend warboard.py): one risk pass -> one brief ---- */
+var BAND_BASE={red:100,amber:50,green:10,done:0};
+function scoreOf(t){
+  var rk=riskOf(t); var due=parseMD(t.due);
+  var dtd=due?Math.round((due-RISK_TODAY)/86400000):null;
+  var s=BAND_BASE[rk.band]||0; if(dtd!=null)s+=Math.max(0,30-dtd);
+  return {band:rk.band,reason:rk.reason,score:s,dtd:dtd};
+}
+function warboardFor(scope){
+  var tasks=(MOCK.tasks[scope]||[]).map(function(t){return Object.assign({},t,scoreOf(t));})
+    .filter(function(t){return t.band!=='done';});
+  var ranked=tasks.slice().sort(function(a,b){return b.score-a.score;});
+  var atRisk=ranked.filter(function(t){return t.band==='amber'||t.band==='red';});
+  var top=atRisk.slice(0,3);
+  var meetings=(MOCK.today[scope]||[]).filter(function(e){return e.kind==='event';});
+  var stale=atRisk.filter(function(t){return t.ball_in_court!=='Me';});
+  var mine=atRisk.filter(function(t){return t.ball_in_court==='Me';});
+  var hi=mine[0]||ranked[0]||null;
+  var parts=[top.length?(top.length+' date'+(top.length!==1?'s':'')+' in danger'):'no dates in danger'];
+  if(meetings.length)parts.push(meetings.length+' meeting'+(meetings.length!==1?'s':'')+' today');
+  return {headline:parts.join(' · '),top:top,meetings:meetings,stale:stale,highest:hi};
+}
+
 /* ============================ STATE ============================ */
 var S={scope:'personal',view:'home',filter:'all',log:[],extra:{personal:[],work:[]},nudges:{},rearmed:{}};
 function accent(){return S.scope==='personal'?'#34d399':'#f59e0b'}
@@ -452,7 +475,23 @@ function dashboard(){
       '<span style="color:#cbd2dd;line-height:1.3">'+esc(m.text)+'</span><span class="xs mut" style="margin-left:auto;flex:0 0 auto">'+m.ts+'</span></div>';
   }).join('');
 
+  var wb=warboardFor(sc);
+  var BANDC={red:'#ef4444',amber:'#eab308',green:'#22c55e'};
+  var wbPips=wb.top.map(function(d){return '<span class="pill" style="color:'+BANDC[d.band]+';background:'+BANDC[d.band]+'1f;border:1px solid '+BANDC[d.band]+'40"><span class="dot" style="background:'+BANDC[d.band]+'"></span> '+esc(d.description)+' · due '+esc(d.due)+'</span>';}).join(' ');
+  var wbHi=wb.highest?'<div class="row" style="gap:8px;margin-top:10px;align-items:center;background:'+a+'14;border:1px solid '+a+'33;border-radius:10px;padding:8px 10px;flex-wrap:wrap">'+
+    '<span class="xs" style="font-weight:700;color:'+a+'">→ START WITH</span><span style="font-size:12px;font-weight:500">'+esc(wb.highest.description)+'</span><span class="xs mut">'+esc(wb.highest.reason)+'</span>'+
+    '<button class="btn-acc" style="width:auto;padding:5px 12px;margin-left:auto" data-act="toast" data-msg="'+esc('Started: '+wb.highest.description)+'">Start</button></div>':'';
   return '<div class="grid">'+
+    '<div class="col-12"><section style="background:linear-gradient(90deg,'+a+'10,var(--ink-900));border:1px solid var(--line);border-left:3px solid '+a+';border-radius:16px;padding:14px 16px">'+
+      '<div class="row" style="gap:10px;flex-wrap:wrap;align-items:center">'+
+        '<span class="dot" style="background:'+a+';animation:pulse 2s infinite"></span>'+
+        '<span style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:'+a+'">Morning War-Board</span>'+
+        '<span class="xs mut">'+sc+' · today</span>'+
+        '<span style="font-size:13px;font-weight:600">'+esc(wb.headline)+'</span>'+
+        '<span class="xs mut" style="margin-left:auto">'+wb.meetings.length+' mtgs · '+wb.stale.length+' waiting on others</span>'+
+      '</div>'+
+      (wbPips?'<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:10px">'+wbPips+'</div>':'')+wbHi+
+    '</section></div>'+
     '<section class="hero"><div class="spaced" style="margin-bottom:12px"><div class="row" style="gap:8px">'+
       '<span class="dot" style="background:'+a+';animation:pulse 2s infinite"></span>'+
       '<span style="font-size:14px;font-weight:600">Suggested next steps</span>'+

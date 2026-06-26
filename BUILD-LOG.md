@@ -108,4 +108,19 @@ Reverse-chronological log of what got built, by an autonomous session.
   nudge_count→1, re-arms follow-up to 2026-06-28, sends nothing, throttles next nudge.
   Preview (DOM) — chase card shown, click drops it + 3→2 pending + re-arm toast.
 
+### Phase 2 — Morning War-Board (one brief, fanned out) — DONE, verified
+- **`backend/app/warboard.py`**: one `risk()` pass per scope → ONE structured object
+  `{headline, top_dates(3), meetings_today, stale_balls, highest_leverage, personal_hard_dates}`.
+  The single highest-leverage action = the most urgent on-you at-risk item. Folds personal
+  RED dates into the WORK brief so nothing hides behind work.
+- **Fan-out** (`fan_out`): builds the brief + pushes it to Discord (mock) and writes a
+  Memory note (mock) — same object renders all three surfaces, guaranteed identical.
+- **Wiring**: computed into a `warboard` panel on every `refresh_all`; added to the
+  `/api/dashboard` bundle; `GET /api/warboard` + `POST /api/warboard/run` (the 6am cron).
+- **Preview**: full-width War-Board band atop the dashboard (above the hero) — label,
+  headline, band-colored date pips, "→ START WITH" highest-leverage row + Start button.
+- **Verified**: backend brief (RFI red/2d, manpower amber/3d, pre-con amber/4d; 2 meetings;
+  Turner GC stale; highest=RFI) + fan-out (Discord #daily-work + memory note) + preview
+  band (DOM) matches the backend exactly.
+
 <!-- newest entries go ABOVE this line as work proceeds -->

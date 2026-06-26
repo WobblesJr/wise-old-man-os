@@ -32,6 +32,7 @@ def dashboard(scope: str = Query("personal", pattern="^(personal|work)$")):
         "scope": scope,
         "mode": settings.DATA_MODE,
         "credentials": settings.credential_status(),
+        "warboard": grab("warboard", scope),
         "suggestions": grab("suggestions", scope),
         "approvals": grab("approvals", scope),
         "today": grab("today", scope),
@@ -70,3 +71,19 @@ def chaser_run():
     res = chaser.run_all()
     cache.refresh_all()  # re-cache so the new chases surface on the dashboard
     return res
+
+
+@router.get("/warboard")
+def warboard_get(scope: str = Query("personal", pattern="^(personal|work)$")):
+    """The Morning War-Board brief for a scope (cached; same object the hero renders)."""
+    p = db.get_panel("warboard", scope)
+    if p is None:
+        raise HTTPException(status_code=404, detail="warboard not cached")
+    return p["data"]
+
+
+@router.post("/warboard/run")
+def warboard_run(scope: str = Query("work", pattern="^(personal|work)$")):
+    """The 6am cron entrypoint: build the brief and fan it out to Discord + Memory (mock)."""
+    from .. import warboard
+    return warboard.fan_out(scope)
