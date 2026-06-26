@@ -26,31 +26,39 @@ sudo systemctl enable --now wom        # start now + on every boot
 systemctl status wom                    # verify it's listening on 0.0.0.0:8787
 ```
 
-## The cron job (auto-pull + restart-if-changed)
-`tools/deploy.sh` pulls the repo + the vault sub-repo, reinstalls deps, and restarts **only if code
-changed** (static-only pulls skip the restart). Wire it to cron:
+## The cron job (periodic git-pull only — systemd owns liveness)
+**Division of responsibility:** systemd runs the server and keeps it alive (crash + boot). Cron's
+*only* job is to pull new commits on a schedule; when code changed, `deploy.sh` asks systemd to
+restart (`systemctl restart wom`). Don't use a cron `@reboot` to launch the server — systemd's
+`enable --now` already starts it on boot, and two launchers would fight for port 8787.
 ```bash
 chmod +x tools/deploy.sh
 crontab -e
-# then add (adjust the path):
-@reboot sleep 10 && WOM_REPO_DIR=$HOME/wise-old-man-os /bin/bash $HOME/wise-old-man-os/tools/deploy.sh >>/tmp/wom-deploy.log 2>&1
+# one line — periodic pull; restart is delegated to systemd inside the script:
 */10 * * * * WOM_REPO_DIR=$HOME/wise-old-man-os /bin/bash $HOME/wise-old-man-os/tools/deploy.sh >>/tmp/wom-deploy.log 2>&1
 ```
-With the systemd service installed, `deploy.sh` restarts via `systemctl`; without it, it relaunches
-with `nohup`. `@reboot` covers boot; the `*/10` line auto-deploys new commits every 10 minutes.
+`deploy.sh` skips the restart entirely on static-only pulls (the server serves those fresh).
 
 > Prereq: the VM pulls from a **git remote**, so push the repo (and the vault repo) to GitHub first
 > (Milestone 2 / your private `wom-vault`). Until then, `git pull` has nothing to pull.
 
 ## Hand-off prompt (paste to Hermes or Claude Code on the VM)
-> Set up the Wise Old Man OS backend to run continuously and auto-deploy on this Ubuntu machine.
-> The repo is cloned at `$HOME/wise-old-man-os` (adjust if different).
-> 1. Install a **systemd service** from `deploy/wom.service` named `wom`: replace `USER` with the real
->    user, point it at `backend/`, load env from the repo-root `.env`, bind `0.0.0.0:8787`, restart on
->    failure, start on boot. `daemon-reload`, then `enable --now`.
-> 2. Add two **cron** entries that run `tools/deploy.sh` (with `WOM_REPO_DIR` set): one `@reboot`, one
->    every 10 minutes — it git-pulls the repo + the `backend/data/vault` sub-repo, runs
->    `pip install -r requirements.txt`, and restarts `wom` only when code changed.
-> 3. Verify: `systemctl status wom` shows active, `curl -s localhost:8787/api/health` returns ok, and
->    the Cloudflare tunnel (`cloudflared`) reaches `http://localhost:8787`.
-> Report back `systemctl status wom`, the installed crontab, and the health-check output.
+> Set up the Wise Old Man OS backend to run continuously and auto-deploy on this Ubuntu machine. The
+> repo is cloned at `$HOME/wise-old-man-os` (adjust if different).
+>
+> **Architecture — keep these two jobs separate:** **systemd** owns *running and keeping the backend
+> alive* (auto-restart on crash, auto-start on boot). **cron** does *only* the periodic git-pull and
+> delegates any restart back to systemd. A bare cron job can't keep a server alive or survive reboots
+> reliably, so do NOT use cron to launch the server (no `@reboot` start line) — that would double-launch
+> and fight for port 8787.
+>
+> 1. **systemd (the runner):** install `deploy/wom.service` as `wom` — replace `USER` with the real
+>    user, point `WorkingDirectory` at `backend/`, `EnvironmentFile` at the repo-root `.env`, bind
+>    `0.0.0.0:8787`, `Restart=always`. `daemon-reload`, then `enable --now` (this also covers boot).
+> 2. **cron (pull only):** add ONE entry — every 10 minutes run `tools/deploy.sh` (with `WOM_REPO_DIR`
+>    set). It git-pulls the repo + the `backend/data/vault` sub-repo, runs `pip install -r
+>    requirements.txt`, and **when code changed restarts via `systemctl restart wom`** (skips the
+>    restart on static-only pulls). No `@reboot` line — systemd already covers boot.
+> 3. **Verify:** `systemctl status wom` is active + enabled; `curl -s localhost:8787/api/health`
+>    returns ok; `cloudflared` reaches `http://localhost:8787`.
+> Report back `systemctl status wom`, the one-line crontab, and the health-check output.
