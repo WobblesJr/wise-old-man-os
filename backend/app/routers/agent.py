@@ -20,15 +20,6 @@ from ..models import AgentSignalIn, ConsoleMessageIn, PriorityIn
 router = APIRouter(prefix="/api/agent", tags=["agent"])
 console_router = APIRouter(prefix="/api/console", tags=["console"])
 
-# Canned, role-aware replies (mock). Real agents replace these by posting their own lines.
-_AGENT_REPLY = {
-    "hermes": "Hermes (orchestrator · VM): on it — I'll plan this and route any build/coding work "
-              "to Claude Code, then surface results here for your approval.",
-    "claude-code": "Claude Code (on your Windows machine): working in the repo — I'll stage anything "
-                   "that changes files as an approval. Hermes can see this in shared storage.",
-    "cowork": "Cowork (on your Windows machine): I'll pair on this and keep Hermes in the loop.",
-}
-
 # In-process pub/sub. Each SSE client gets a Queue; POSTs broadcast to all.
 _subscribers: set[asyncio.Queue] = set()
 
@@ -121,23 +112,22 @@ async def stream(request: Request, scope: str = Query("both")):
 
 @console_router.post("/message")
 async def post_console(msg: ConsoleMessageIn):
-    """Write into the shared multi-agent console; broadcast + a mock reply from the addressee."""
-    def _store(agent: str, to_agent, text: str) -> dict:
-        now = _now()
-        with db.get_conn() as conn:
-            cur = conn.execute(
-                "INSERT INTO console_messages(ts,scope,agent,to_agent,text) VALUES(?,?,?,?,?)",
-                (now, msg.scope, agent, to_agent, text))
-            mid = cur.lastrowid
-        return {"id": mid, "ts": now, "scope": msg.scope, "agent": agent,
-                "to_agent": to_agent, "text": text}
+    """Write one line into the shared multi-agent console and broadcast it to live clients.
 
-    you = _store(msg.agent, msg.to_agent, msg.text)
-    await _broadcast({"type": "console_message", "msg": you})
-    reply = _store(msg.to_agent, msg.agent,
-                   _AGENT_REPLY.get(msg.to_agent, "(no agent connected — mock)"))
-    await _broadcast({"type": "console_message", "msg": reply})
-    return {"ok": True, "you": you, "reply": reply}
+    No auto-reply: real agents answer by POSTing their own lines (see tools/console_worker.py,
+    which a live agent runs to watch this console and reply). That keeps the chat honest — a reply
+    only appears when an actual agent is connected and responding.
+    """
+    now = _now()
+    with db.get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO console_messages(ts,scope,agent,to_agent,text) VALUES(?,?,?,?,?)",
+            (now, msg.scope, msg.agent, msg.to_agent, msg.text))
+        mid = cur.lastrowid
+    rec = {"id": mid, "ts": now, "scope": msg.scope, "agent": msg.agent,
+           "to_agent": msg.to_agent, "text": msg.text}
+    await _broadcast({"type": "console_message", "msg": rec})
+    return {"ok": True, "msg": rec}
 
 
 @console_router.get("/messages")

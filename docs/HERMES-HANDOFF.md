@@ -122,6 +122,31 @@ mock→live adapter work. This handoff is the *delta* on top of them.
 
 ---
 
+## 4b. Live Workspace chat — make the agents actually reply (action for Hermes)
+
+The website Workspace now posts to the real console (`/api/console/message`) and renders the shared
+thread. **But replies must come from a real agent.** The old backend auto-reply was a hardcoded
+placeholder (it answered every message with the same canned line, ignoring what Gavin said) — that's
+been **removed**, so now a reply only appears when an agent is actually responding.
+
+**To make Hermes (and Claude Code) reply for real, run the responder on the VM (the backend host):**
+```bash
+# needs WOM_SERVICE_TOKEN + ANTHROPIC_API_KEY in env (or backend/.env)
+python tools/console_worker.py --agent hermes,claude-code
+```
+It polls `/api/console/messages`, and for any new message addressed to `hermes` / `claude-code` /
+`cowork`, it generates a reply with the Anthropic API and POSTs it back — so it shows up live in Gavin's
+Workspace. It authenticates over localhost with the **service-token bearer** (no Cloudflare needed since
+it runs on the backend host). Run it under systemd/`nohup` so it stays up.
+
+`tools/console_worker.py` is a **reference responder** — concise persona prompts per agent. **Better:**
+fold the same loop into Hermes's own think-loop so its replies carry Hermes's real planning/priorities
+and can stage approvals, rather than a thin stand-in. Either is fine to start; the worker gets Gavin a
+real conversation today.
+
+> Note: the backend change (removing the canned reply) + `tools/console_worker.py` ship in the next push
+> to `main`. After the VM pulls, **restart the backend** (code changed) and **start the worker**.
+
 ## 5. Pointers
 
 - App (single file): `preview/index.html` · backend root route: `backend/app/main.py` (`@app.get("/")`).
