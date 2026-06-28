@@ -1828,6 +1828,9 @@ S.approvals=(MOCK.approvals||[]).slice();         // seed the approvals queue
 render(false);
 connectHermes();
 loadConsole();
+/* polling fallback — Cloudflare Access often blocks/buffers SSE, so re-fetch the
+   console every 4s while the Workspace is open (and not mid-typing) so replies show. */
+setInterval(function(){if(S.view==='workspace'&&isLive()&&!isEditing())loadConsole();},4000);
 if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){navigator.serviceWorker.register('/preview/sw.js').catch(function(){});}
 </script>
 </body>
