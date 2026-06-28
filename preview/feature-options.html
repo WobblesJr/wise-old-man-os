@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Wise Old Man OS — feature showcase (Warm Paper)</title>
+<style>
+body{margin:0;background:#ECEAE6;padding:20px;font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
+.intro{max-width:760px;margin:0 auto 14px;font-size:13px;color:#6E665B;line-height:1.5}
+.intro b{color:#36302A;font-weight:600}
+.wp{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;max-width:760px;margin:0 auto;
+--bg:#FAF6EE;--surface:#FFFCF6;--s2:#FBF1E2;--border:#E6DECF;--ink:#36302A;--mut:#6E665B;--clay:#A65A3A;--claySoft:#FBF1E2;--pos:#5E8C6A;--warn:#B0742A;--dng:#A8503E;--rail:#F2EADA;--railA:#FBF1E2;--gl:#EFE7D8;
+--s4:4px;--s8:8px;--s12:12px;--s16:16px;--s20:20px;--s24:24px;--s32:32px}
+.wp *{box-sizing:border-box}
+.wpchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.wpchip{font-size:12px;padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:var(--rail);color:var(--mut);cursor:pointer}
+.wpchip.on{background:var(--clay);color:#fff;border-color:transparent}
+.wpcap{font-size:12.5px;color:var(--mut);margin:0 2px 12px;line-height:1.5;min-height:18px}
+.wpcap b{color:var(--ink);font-weight:600;font-family:Georgia,serif}
+.wpframe{border-radius:14px;overflow:hidden;border:1px solid var(--border);box-shadow:0 6px 24px rgba(54,48,42,.08)}
+.wpapp{background:var(--bg);color:var(--ink);font-size:13px}
+.wptop{height:54px;display:flex;align-items:center;gap:var(--s12);padding:0 var(--s20);border-bottom:1px solid var(--border);background:var(--surface)}
+.wplogo{width:24px;height:24px;border-radius:7px;background:var(--clay);color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px}
+.wpword{font-family:Georgia,serif;font-weight:600;font-size:15px}
+.wpseg{margin-left:auto;display:flex;background:var(--s2);border:1px solid var(--border);border-radius:999px;padding:2px}
+.wpseg button{font-size:12px;padding:4px 12px;border:0;background:none;color:var(--mut);border-radius:999px;cursor:pointer}
+.wpseg button.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 1px rgba(54,48,42,.05)}
+.wpadd{width:30px;height:30px;border-radius:8px;background:var(--clay);color:#fff;border:0;font-size:17px;cursor:pointer;display:grid;place-items:center}
+.wpbody{display:flex;height:560px}
+.wpnav{width:210px;flex:0 0 210px;background:var(--rail);border-right:1px solid var(--border);padding:var(--s12) var(--s8);overflow-y:auto;position:relative}
+.wpeb{font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;color:var(--mut);padding:var(--s12) var(--s12) var(--s4)}
+.wprow{display:flex;align-items:center;gap:9px;padding:7px var(--s12);border-radius:8px;cursor:pointer;color:var(--mut);font-size:13px;transition:background-color .14s ease,color .14s ease}
+.wprow:hover{background:var(--s2);color:var(--ink)}
+.wprow.on{background:var(--railA);color:var(--ink);font-weight:500}
+.wprow.sub{padding-left:26px;font-size:12.5px}
+.wpav{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:10px;font-weight:600;background:var(--s2);color:var(--mut);flex:0 0 auto}
+.wpav.h{background:var(--clay);color:#fff}
+.wprow .ic{width:18px;text-align:center;color:var(--mut)}
+.wprow .lbl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wprow .dot{width:6px;height:6px;border-radius:50%}
+.wpmore .wprow{color:#857C70}
+.wpmain{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
+.wppane{flex:1;overflow-y:auto;padding:var(--s24)}
+.tasks .wppane{padding:var(--s20) var(--s24)}
+.h1{font-family:Georgia,serif;font-size:21px;font-weight:600;margin:0}
+.eye{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:3px}
+.deep{font-size:12px;color:var(--clay);text-decoration:none;cursor:pointer}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:var(--s20)}
+.tileh{display:flex;align-items:center;margin-bottom:var(--s12)}
+.tileh h3{margin:0;font-family:Georgia,serif;font-size:14px;font-weight:600}
+.tileh .deep{margin-left:auto}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s16)}
+.stat{font-family:Georgia,serif;font-size:26px;font-weight:600;line-height:1}
+.muted{color:var(--mut)}.xs{font-size:11px}.sm{font-size:12px}
+.bar{height:6px;border-radius:3px;background:var(--s2);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:3px}
+.lrow{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--gl);font-size:12.5px}
+.lrow:last-child{border-bottom:0}
+.num{margin-left:auto;font-variant-numeric:tabular-nums}
+.pill{font-size:10px;padding:2px 8px;border-radius:999px;background:var(--s2);color:var(--mut)}
+.dotg{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.hero{grid-column:1/-1;border-left:3px solid var(--clay)}
+.cta{background:var(--clay);color:#fff;border:0;border-radius:8px;font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer}
+.gbtn{background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;padding:7px 12px;cursor:pointer;color:var(--ink)}
+table.led{width:100%;border-collapse:separate;border-spacing:0;font-size:12px}
+.led th{position:sticky;top:0;background:var(--s2);text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);font-weight:600;padding:7px 9px;border-bottom:1px solid var(--border);white-space:nowrap}
+.led td{padding:8px 9px;border-bottom:1px solid var(--gl);white-space:nowrap}
+.led tr:last-child td{border-bottom:0}
+.led input{width:100%;border:0;background:#FFF8E8;font:inherit;font-size:12px;color:var(--ink);outline:none;padding:2px 3px;border-radius:3px}
+.led input:focus{box-shadow:inset 0 0 0 2px var(--clay)}
+.pl{font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px}
+.ctrl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:var(--s16) 0}
+.fchip{font-size:11.5px;padding:4px 11px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--mut);cursor:pointer}
+.fchip.on{background:var(--clay);color:#fff;border-color:transparent}
+.sel{font-size:12px;border:1px solid var(--border);border-radius:8px;padding:5px 9px;background:var(--surface);color:var(--ink)}
+.divv{width:1px;height:18px;background:var(--border)}
+.cardface{background:linear-gradient(135deg,#3A4A52,#2C3940);border-radius:12px;padding:var(--s16);color:#E8EEF0}
+.msg{display:flex;gap:10px;margin-bottom:var(--s16)}
+.msg .b{flex:1;min-width:0}
+.msg .nm{font-size:12.5px;font-weight:600;display:flex;gap:6px;align-items:center}
+.msg .tx{font-size:13px;line-height:1.5;margin-top:2px}
+.msg.ag .tx{font-family:Georgia,serif;font-size:13.5px;line-height:1.6}
+.you .tx{background:var(--claySoft);border:1px solid var(--border);border-radius:12px;padding:7px 11px;display:inline-block}
+.codeb{margin-top:10px;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--surface)}
+.codeb .ch{font-size:10.5px;color:var(--mut);padding:5px 10px;background:var(--s2);border-bottom:1px solid var(--border);font-family:ui-monospace,Menlo,monospace}
+.codeb pre{margin:0;padding:9px 10px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;line-height:1.5;color:var(--ink)}
+.tabs{display:flex;gap:4px;padding:8px;border-bottom:1px solid var(--border);background:var(--surface)}
+.tabs .t{font-size:11.5px;padding:4px 10px;border-radius:7px;color:var(--mut);cursor:pointer}
+.tabs .t.on{background:var(--s2);color:var(--ink);font-weight:600}
+.mat{padding:var(--s16);background:var(--s2);flex:1;overflow:auto}
+.inkpad{min-height:150px;border:1px dashed var(--border);border-radius:8px;background:repeating-linear-gradient(transparent,transparent 27px,#EFE7D8 28px);position:relative}
+.fade{animation:wpf .2s cubic-bezier(.22,.61,.36,1)}
+@keyframes wpf{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style></head>
+<body>
+<p class="intro"><b>Wise Old Man OS — feature showcase (Warm Paper).</b> Calm, spacing-first screens. Click a feature chip to switch; toggle Work/Personal up top; on Tasks try “+ Add row” then Tab through the cells.</p>
+<div class="wp">
+  <div class="wpchips" id="wpChips"></div>
+  <div class="wpcap" id="wpCap"></div>
+  <div class="wpframe"><div class="wpapp">
+    <div class="wptop"><span class="wplogo">W</span><span class="wpword">Wise Old Man</span>
+      <span class="wpseg" id="wpScope"><button class="on" data-sc="work">Work</button><button data-sc="personal">Personal</button></span>
+      <button class="wpadd" title="Quick add (always here)">+</button></div>
+    <div class="wpbody"><div class="wpnav" id="wpNav"></div><div class="wpmain tasks" id="wpMainWrap"><div class="wppane" id="wpPane"></div></div></div>
+  </div></div>
+</div>
+<script>
+(function(){
+  var NAV=[
+    {grp:'primary',items:[['Dashboard','dashboard','▦'],['Tasks','tasks','▤']]},
+    {grp:'agents',items:[['Workspace','workspace','◇'],['Hermes','workspace','H',1,'hermes'],['Claude Code','workspace','CC',1,'code'],['Cowork','workspace','CW',1,'cowork']]},
+    {grp:'more',items:[['Cockpit','cockpit','◷'],['Finance','finance','＄'],['Notes','notes','✎']]}
+  ];
+  var CHIPS=[['Dashboard','dashboard'],['Tasks','tasks'],['Workspace','workspace'],['Cockpit','cockpit'],['Finance','finance'],['Notes','notes']];
+  var CAP={dashboard:'<b>Dashboard.</b> Calm daily overview — Work/Personal toggle re-skins project health, today’s focus, tasks, a Cockpit glance and a finance peek. Every tile = one number-cluster + one list, then a quiet deep-link.',
+    tasks:'<b>Tasks.</b> A spreadsheet ledger — “+ Add row” drops a blank ruled row; <b>Tab</b> through every cell, Enter commits and reopens. Lightened inner gridlines turn the cage into a ledger.',
+    workspace:'<b>Workspace.</b> Chat an agent on the left, see the live rendered preview on the right — Preview / Code / Diff tabs swap the same artifact in place. The preview ability stays.',
+    cockpit:'<b>Cockpit.</b> The screen you liked — Connections, Scheduled jobs, Skills, Usage — as a 2×2 of equal tiles with rows on hairlines instead of boxes, more air.',
+    finance:'<b>Finance.</b> Net worth + per-portfolio performance, top holdings, upcoming bills, connected card — lots of numbers, right-aligned and calm; up/down static, never flashing.',
+    notes:'<b>Notes.</b> Work/Personal folders, a note list, and an Apple-Pencil ink canvas beside typed text — everything saves to your Obsidian vault.'};
+  var state={feat:'dashboard',scope:'work',agent:'hermes'};
+  var PRIO=['#857C70','#6E8AA8','#B0742A','#C08A3E','#A8503E'];
+  function navHtml(){
+    return NAV.map(function(g){
+      var eb=g.grp==='primary'?'':'<div class="wpeb">'+(g.grp==='agents'?'Agents':'More')+'</div>';
+      var cls=g.grp==='more'?'wpmore':'';
+      var rows=g.items.map(function(it){
+        var on=state.feat===it[1]&&(!it[3]||(it[1]==='workspace'&&state.agent===it[4]));
+        if(it[1]==='workspace'&&!it[3]) on=state.feat==='workspace';
+        var ic=it[3]?'<span class="wpav '+(it[4]==='hermes'?'h':'')+'">'+it[2]+'</span>':'<span class="ic">'+it[2]+'</span>';
+        var dot=g.grp==='agents'&&it[3]?'<span class="dot" style="background:'+(it[4]==='hermes'?'var(--pos)':it[4]==='code'?'var(--warn)':'var(--mut)')+'"></span>':'';
+        return '<div class="wprow '+(it[3]?'sub':'')+(on?' on':'')+'" data-feat="'+it[1]+'" data-agent="'+(it[4]||'')+'">'+ic+'<span class="lbl">'+it[0]+'</span>'+dot+'</div>';
+      }).join('');
+      return '<div class="'+cls+'">'+eb+rows+'</div>';
+    }).join('');
+  }
+  function tile(title,deep,body,extra){return '<div class="tile '+(extra||'')+'"><div class="tileh"><h3>'+title+'</h3>'+(deep?'<a class="deep">'+deep+'</a>':'')+'</div>'+body+'</div>';}
+  function bar(pct,col){return '<div class="bar"><i style="width:'+pct+'%;background:'+col+'"></i></div>';}
+  function dashboard(){
+    var work=state.scope==='work';
+    var hero=tile('Today’s focus','', '<div class="sm muted" style="margin-bottom:8px">'+(work?'1 red is on you and it gates the L2 rough-in.':'Quarterly taxes due in 2 days.')+'</div>'+
+      '<div style="display:flex;align-items:center;gap:10px"><div class="h1" style="font-size:16px">'+(work?'Submit RFI on mechanical room clearances':'Pay quarterly estimated taxes')+'</div><button class="cta" style="margin-left:auto">Start</button></div>','hero');
+    var proj=tile('Project metrics','open →', (work?[['Project Alpha',72,'var(--clay)','on track'],['Project Beta',54,'var(--warn)','schedule risk']]:[['Italy trip',60,'var(--clay)','Jul 12'],['Home',85,'var(--pos)','steady']]).map(function(p){
+      return '<div style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span class="dotg" style="background:'+p[2]+'"></span><span class="sm">'+p[0]+'</span><span class="num xs muted">'+p[3]+'</span></div>'+bar(p[1],p[2])+'</div>';}).join(''));
+    var tg=tile('Tasks at a glance','tasks →', '<div style="display:flex;gap:20px;margin-bottom:12px"><div><div class="stat">'+(work?7:6)+'</div><div class="xs muted">open</div></div><div><div class="stat" style="color:var(--clay)">'+(work?5:4)+'</div><div class="xs muted">on me</div></div><div><div class="stat">'+(work?2:1)+'</div><div class="xs muted">at risk</div></div></div>'+
+      (work?['Submit RFI-014','Manpower L3 schedule','Wait on GC']:['Renew passport','Pay taxes','Dentist reschedule']).map(function(t){return '<div class="lrow"><span>'+t+'</span></div>';}).join(''));
+    var ck=tile('Cockpit','cockpit →','<div class="sm" style="display:flex;gap:18px;align-items:baseline"><div><span class="stat" style="font-size:20px">7</span> <span class="xs muted">connected</span></div><div><span class="stat" style="font-size:20px">5</span> <span class="xs muted">jobs</span></div><div><span class="stat" style="font-size:20px">41%</span> <span class="xs muted">window</span></div></div>');
+    var fin=tile('Finance','finance →','<div class="stat" style="font-size:22px">$284,120</div><div class="xs" style="color:var(--pos);margin-top:3px">▲ 1.2% today</div><svg width="100%" height="34" viewBox="0 0 200 34" style="margin-top:6px"><polyline points="0,26 30,22 60,24 90,16 120,18 150,10 180,12 200,6" fill="none" stroke="var(--pos)" stroke-width="1.6"/></svg>');
+    return '<div style="display:flex;align-items:flex-end;margin-bottom:var(--s24)"><div><div class="eye">'+(work?'Work':'Personal')+' · Saturday, Jun 28</div><div class="h1">Good morning, Gavin</div></div></div><div class="grid2">'+hero+proj+tg+ck+fin+'</div>';
+  }
+  function tasks(){
+    var work=state.scope==='work';
+    var rows=work?[[4,'Submit RFI on mechanical room clearances','06/22','06/27','Gavin','Me','Project Alpha','action','in progress'],[4,'Manpower-loaded schedule for L3','06/20','06/28','Gavin','Me','Project Alpha','action','in progress'],[3,'Wait on GC response','06/19','07/01','Gavin','Turner GC','Project Alpha','wait','blocked'],[1,'VE option on chilled water','06/18','07/10','Gavin','Me','Project Beta','hold','not started']]
+      :[[3,'Pay quarterly estimated taxes','06/24','06/30','Gavin','Me','Finance','action','not started'],[4,'Renew passport before Italy','06/20','07/10','Gavin','Me','Travel','action','in progress'],[1,'Read Pragmatic Programmer','06/18','07/05','Gavin','Me','Learning','read','in progress']];
+    var head='<tr><th style="width:42px">!</th><th>Description</th><th>Start</th><th>Due</th><th>Owner</th><th>Ball</th><th>Category</th><th>Action</th><th>Status</th></tr>';
+    var body=rows.map(function(r){return '<tr><td><span class="pl" style="background:'+PRIO[r[0]]+'22;color:'+PRIO[r[0]]+'">P'+r[0]+'</span></td><td>'+r[1]+'</td><td class="muted">'+r[2]+'</td><td>'+r[3]+'</td><td class="muted">'+r[4]+'</td><td>'+(r[5]==='Me'?'<b style="color:var(--clay)">Me</b>':'<span class="muted">'+r[5]+'</span>')+'</td><td class="muted">'+r[6]+'</td><td class="muted">'+r[7]+'</td><td class="muted">'+r[8]+'</td></tr>';}).join('');
+    return '<div style="display:flex;align-items:baseline"><div><div class="h1">Tasks</div><div class="xs muted">'+(work?'Project Alpha + Beta':'Personal')+' · '+rows.length+' shown</div></div><div class="xs muted" style="margin-left:auto">+ Add row · then <b>Tab</b> through cells</div></div>'+
+      '<div class="ctrl"><span class="xs muted">On site:</span><select class="sel"><option>Off-site</option><option>Project Alpha</option></select><span class="divv"></span>'+
+      ['All','Mine','Action','Wait','Hold'].map(function(f,i){return '<span class="fchip'+(i===0?' on':'')+'">'+f+'</span>';}).join('')+'<span class="num xs muted">'+rows.length+' saved</span></div>'+
+      '<div class="tile" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table class="led"><thead>'+head+'</thead><tbody id="ledBody">'+body+'</tbody></table></div>'+
+      '<div style="padding:9px 12px;border-top:1px solid var(--border);background:var(--s2)"><button class="gbtn" id="addRow">+ Add row</button></div></div>'+
+      '<div class="xs muted" style="margin-top:12px"><b>!</b> = priority (P4 highest) · left-most cell color = action type · the way Hermes adds a row too.</div>';
+  }
+  function wireTasks(){
+    var btn=document.getElementById('addRow'); if(!btn)return;
+    btn.onclick=function(){
+      var tb=document.getElementById('ledBody');var tr=document.createElement('tr');
+      tr.innerHTML='<td><span class="pl" style="background:#857C7022;color:#857C70">P—</span></td>'+
+        ['New task…','mm/dd','mm/dd','Gavin','Me','Category','action','not started'].map(function(p){return '<td><input value="" placeholder="'+p+'"></td>';}).join('');
+      tb.appendChild(tr);var ins=tr.querySelectorAll('input');ins[0].focus();
+      ins.forEach(function(inp){inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();
+        var v=ins[0].value||'New task';tr.innerHTML='<td><span class="pl" style="background:#6E8AA822;color:#6E8AA8">P2</span></td><td>'+v+'</td><td class="muted">'+(ins[1].value||'06/28')+'</td><td>'+(ins[2].value||'07/05')+'</td><td class="muted">Gavin</td><td><b style="color:var(--clay)">Me</b></td><td class="muted">'+(ins[5].value||'Inbox')+'</td><td class="muted">action</td><td class="muted">not started</td>';
+        btn.click();}});});
+    };
+  }
+  function cockpit(){
+    function rowsT(arr){return arr.map(function(a){return '<div class="lrow"><span class="dotg" style="background:'+a[2]+'"></span><span>'+a[0]+'</span><span class="num pill">'+a[1]+'</span></div>';}).join('');}
+    var conn=tile('Connections','', rowsT([['Google — Personal','stubbed','var(--warn)'],['G-Suite Sheet','stubbed','var(--warn)'],['Discord','ready','var(--pos)'],['Obsidian vault','synced','var(--pos)']]));
+    var jobs=tile('Scheduled jobs','', rowsT([['Morning War-Board','6:00','var(--pos)'],['Chaser sweep','15m','var(--pos)'],['Sheet ↔ vault','10m','var(--warn)'],['Drive ingest','1h','var(--mut)']]));
+    var skl=tile('Skills inventory','', rowsT([['RFI drafter','work','var(--mut)'],['Manpower schedule','work','var(--mut)'],['Inbox triage','both','var(--mut)'],['Memory keeper','both','var(--mut)']]));
+    var use=tile('Usage','', '<div style="display:flex;gap:18px;margin-bottom:10px"><div><div class="stat" style="font-size:20px;color:var(--clay)">41%</div><div class="xs muted">window used</div></div><div><div class="stat" style="font-size:20px">1.3M</div><div class="xs muted">today</div></div></div>'+bar(41,'var(--clay)')+'<div class="xs muted" style="margin-top:6px">Claude Max · resets 3h 12m</div>');
+    return '<div style="display:flex;align-items:baseline;margin-bottom:var(--s24)"><div class="h1">Cockpit</div><div class="num xs muted" style="margin-left:auto">7 connected · 5 jobs</div></div><div class="grid2" style="gap:var(--s24)">'+conn+jobs+skl+use+'</div>';
+  }
+  function finance(){
+    var port=tile('Portfolios','', [['Brokerage','$162,400','+0.9%','var(--pos)'],['Roth IRA','$88,210','+1.6%','var(--pos)'],['401(k)','$33,510','-0.3%','var(--dng)']].map(function(p){return '<div class="lrow"><span>'+p[0]+'</span><span class="num">'+p[1]+'</span><span class="num xs" style="width:48px;text-align:right;color:'+p[3]+'">'+p[2]+'</span></div>';}).join(''));
+    var bills=tile('Upcoming bills','', [['Mortgage','Jul 1','$2,180','auto'],['Amex','Jul 9','$1,240','manual'],['Auto ins.','Jul 14','$148','auto']].map(function(b){return '<div class="lrow"><span>'+b[0]+'</span><span class="muted xs">'+b[1]+'</span><span class="num">'+b[2]+'</span><span class="pill" style="background:'+(b[3]==='auto'?'#5E8C6A22':'#B0742A22')+';color:'+(b[3]==='auto'?'var(--pos)':'var(--warn)')+'">'+b[3]+'</span></div>';}).join(''));
+    var hold=tile('Top holdings','', [['VTI','$41,200','+0.7%'],['AAPL','$22,840','+1.9%'],['NVDA','$18,100','-1.1%'],['VXUS','$9,300','+0.4%']].map(function(h){return '<div class="lrow"><span style="font-weight:600">'+h[0]+'</span><span class="num">'+h[1]+'</span><span class="num xs muted" style="width:44px;text-align:right">'+h[2]+'</span></div>';}).join(''));
+    var card='<div class="tile"><div class="tileh"><h3>Connected card</h3></div><div class="cardface"><div class="xs" style="opacity:.8">American Express</div><div style="font-family:ui-monospace;letter-spacing:2px;margin:10px 0">•••• •••• •••• 1009</div><div style="display:flex"><span class="xs">Balance $1,240</span><span class="xs" style="margin-left:auto">Due Jul 9</span></div></div><div style="margin-top:12px"><div class="xs muted" style="margin-bottom:6px">Limit used · $1,240 / $15,000</div>'+bar(8,'var(--clay)')+'</div></div>';
+    return '<div style="display:flex;align-items:baseline;margin-bottom:var(--s24)"><div><div class="eye">Net worth</div><div class="h1" style="font-size:24px">$284,120</div></div><div class="xs" style="color:var(--pos);margin-left:12px">▲ $3,410 today</div></div><div style="display:grid;grid-template-columns:1.6fr 1fr;gap:var(--s24)"><div style="display:grid;gap:var(--s24)">'+port+bills+'</div><div style="display:grid;gap:var(--s24)">'+hold+card+'</div></div>';
+  }
+  function notes(){
+    var folders='<div style="padding:var(--s12)"><div class="wpseg" style="margin:0 0 12px;width:100%"><button class="on" style="flex:1">Work</button><button style="flex:1">Personal</button></div>'+
+      ['Project Alpha','Project Beta','Meetings','Field notes'].map(function(f){return '<div class="wprow" style="color:var(--mut)"><span class="ic">▸</span><span class="lbl">'+f+'</span></div>';}).join('')+
+      '<div class="tile" style="margin-top:14px;padding:10px"><div class="xs muted">Vault</div><div class="xs" style="font-family:ui-monospace;margin-top:3px">10-wiki/work</div></div></div>';
+    var list='<div style="border-left:1px solid var(--border);border-right:1px solid var(--border)">'+
+      [['L2 clash walk','synced','today'],['RFI-014 prep','synced','yest'],['Crew plan ideas','saving…','yest']].map(function(n,i){return '<div class="lrow" style="padding:12px;border-bottom:1px solid var(--gl);'+(i===0?'background:var(--s2)':'')+'"><div><div style="font-weight:600;font-size:12.5px">'+n[0]+'</div><div class="xs muted">'+n[2]+'</div></div><span class="pill" style="margin-left:auto;background:'+(n[1]==='synced'?'#5E8C6A22':'#B0742A22')+';color:'+(n[1]==='synced'?'var(--pos)':'var(--warn)')+'">'+n[1]+'</span></div>';}).join('')+'</div>';
+    var editor='<div style="padding:var(--s16);flex:1;display:flex;flex-direction:column"><div style="display:flex;align-items:center;margin-bottom:12px"><div class="h1" style="font-size:16px">L2 clash walk</div><div class="wpseg" style="margin-left:auto"><button class="on">Type</button><button>Ink</button><button>Split</button></div></div>'+
+      '<div class="sm" style="line-height:1.6;margin-bottom:16px">Walked L2 mechanical room with the GC. Clearances tight at the chilled-water risers — needs RFI before rough-in. Photos attached.</div>'+
+      '<div class="xs muted" style="margin-bottom:6px">Apple Pencil canvas</div><div class="inkpad"><svg width="100%" height="100%" viewBox="0 0 360 150" preserveAspectRatio="none"><path d="M16 40 C 60 18, 90 70, 130 44 S 210 20, 250 48 S 320 30, 344 52" fill="none" stroke="var(--clay)" stroke-width="2" stroke-linecap="round"/><path d="M20 96 C 70 80, 120 110, 180 92" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/></svg></div>'+
+      '<div class="xs muted" style="margin-top:auto;padding-top:12px;border-top:1px solid var(--gl)">✓ Saved to Obsidian · 10-wiki/work/L2-clash-walk.md</div></div>';
+    return '<div class="tile" style="padding:0;height:100%;display:flex;flex-direction:column"><div style="display:flex;align-items:center;padding:var(--s16);border-bottom:1px solid var(--border)"><div class="h1" style="font-size:16px">Notes</div><span class="pill" style="margin-left:auto;background:#5E8C6A22;color:var(--pos)">✓ Saved to Obsidian</span> <button class="cta" style="margin-left:10px">New note</button></div><div style="display:grid;grid-template-columns:180px 240px 1fr;flex:1;min-height:0"><div style="background:var(--rail)">'+folders+'</div>'+list+'<div style="display:flex;flex-direction:column">'+editor+'</div></div></div>';
+  }
+  function workspace(){
+    var ag={hermes:['Hermes','H','orchestrator'],code:['Claude Code','CC','on your Windows machine'],cowork:['Cowork','CW','pairing']}[state.agent];
+    var conv='<div style="display:flex;align-items:center;gap:9px;padding:var(--s16);border-bottom:1px solid var(--border)"><span class="wpav '+(state.agent==='hermes'?'h':'')+'" style="width:24px;height:24px">'+ag[1]+'</span><div class="h1" style="font-size:15px">'+ag[0]+'</div><span class="pill" style="background:var(--claySoft);color:var(--clay)">'+ag[2]+'</span><span class="dotg" style="background:var(--pos);margin-left:4px"></span></div>'+
+      '<div style="flex:1;overflow:auto;padding:var(--s16)"><div class="msg you"><span class="wpav" style="background:var(--claySoft);color:var(--clay);width:24px;height:24px">G</span><div class="b"><div class="nm">Gavin</div><div class="tx">What needs me first?</div></div></div>'+
+      '<div class="msg ag"><span class="wpav '+(state.agent==='hermes'?'h':'')+'" style="width:24px;height:24px">'+ag[1]+'</span><div class="b"><div class="nm">'+ag[0]+'</div><div class="tx">Start with RFI-014 — it gates the L2 rough-in and the GC won’t reply before noon. I drafted the cover note; preview is on the right.</div><div class="codeb"><div class="ch">priority.json</div><pre>{ "w-t1": { "level": 4 } }</pre></div></div></div></div>'+
+      '<div style="padding:var(--s12) var(--s16);border-top:1px solid var(--border);display:flex;gap:8px"><input class="sel" style="flex:1;padding:8px 10px" placeholder="Message '+ag[0]+'…"><button class="cta">↑</button></div>';
+    var art='<div class="tabs"><span class="t on">Preview</span><span class="t">Code</span><span class="t">Diff</span><span style="margin-left:auto;display:flex;gap:4px"><span class="t">▢</span><span class="t">▭</span></span></div>'+
+      '<div class="mat"><div class="tile" style="padding:14px"><div class="eye">Draft · RFI-014</div><div class="h1" style="font-size:15px;margin-top:2px">Cover note to Turner GC</div><div class="sm" style="line-height:1.55;margin-top:8px;color:var(--mut)">Please find RFI-014 attached re: L2 mechanical clearances. A response by Friday keeps the rough-in sequence on track.</div><div style="display:flex;gap:7px;margin-top:12px"><button class="cta">Approve &amp; send</button><button class="gbtn">Edit</button></div></div></div>'+
+      '<div class="xs muted" style="padding:8px 14px;border-top:1px solid var(--border);display:flex;gap:10px"><span>build ok</span><span>· /drafts/rfi-014</span><span style="margin-left:auto;color:var(--pos)">✓</span></div>';
+    return '<div style="display:flex;height:100%"><div style="flex:1.3;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--border)">'+conv+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column">'+art+'</div></div>';
+  }
+  var RENDER={dashboard:dashboard,tasks:tasks,workspace:workspace,cockpit:cockpit,finance:finance,notes:notes};
+  function render(anim){
+    var wrap=document.getElementById('wpMainWrap');wrap.className='wpmain'+(state.feat==='tasks'?' tasks':'');
+    var pane=document.getElementById('wpPane');
+    pane.style.padding=(state.feat==='workspace'||state.feat==='notes')?'0':'';
+    pane.innerHTML=RENDER[state.feat]();
+    if(anim){pane.classList.remove('fade');void pane.offsetWidth;pane.classList.add('fade');}
+    if(state.feat==='tasks')wireTasks();
+    document.getElementById('wpNav').innerHTML=navHtml();
+    document.querySelectorAll('.wprow').forEach(function(r){r.onclick=function(){var f=r.getAttribute('data-feat');var a=r.getAttribute('data-agent');state.feat=f;if(a)state.agent=a;render(true);};});
+    document.querySelectorAll('.wpchip').forEach(function(c,i){c.classList.toggle('on',CHIPS[i][1]===state.feat);});
+    document.getElementById('wpCap').innerHTML=CAP[state.feat];
+  }
+  document.getElementById('wpChips').innerHTML=CHIPS.map(function(c){return '<button class="wpchip" data-f="'+c[1]+'">'+c[0]+'</button>';}).join('');
+  document.querySelectorAll('.wpchip').forEach(function(c){c.onclick=function(){state.feat=c.getAttribute('data-f');if(state.feat==='workspace')state.agent='hermes';render(true);};});
+  document.querySelectorAll('#wpScope button').forEach(function(b){b.onclick=function(){document.querySelectorAll('#wpScope button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');state.scope=b.getAttribute('data-sc');render(true);};});
+  render(false);
+})();
+</script></body></html>
