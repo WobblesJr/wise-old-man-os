@@ -200,6 +200,11 @@ table.led{width:100%;border-collapse:separate;border-spacing:0;font-size:12px}
 .act-tx{font-size:12.5px;line-height:1.5;color:var(--ink)}
 .act-mt{display:flex;align-items:center;gap:8px;margin-top:4px}
 .act-chip{font-size:10px;padding:2px 8px;border-radius:999px;background:var(--s2);color:var(--mut);text-transform:capitalize}
+/* "not live" = mock / not yet connected to a real source — flagged in red */
+.notlive{color:var(--dng)}
+.badge.mock{color:var(--dng);border-color:var(--dng);font-weight:700;letter-spacing:.05em}
+.lrow.notlive>span{color:var(--dng)}
+.ws-wait{font-size:11px;color:var(--dng);font-style:italic;padding:4px 0 10px 34px}
 .act-time{font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
 .act-empty{padding:var(--s24);text-align:center;color:var(--mut);font-size:12.5px}
 /* dashboard / cockpit peek */
@@ -576,7 +581,7 @@ function shell(){
         '<div class="qamenu" id="qaMenu" role="menu"><button data-qa="task"><span>＋</span>New task<span class="k">spreadsheet row</span></button>'+
         '<button data-qa="note"><span>✎</span>New note<span class="k">→ Obsidian</span></button>'+
         '<button data-qa="capture"><span>◎</span>Quick capture<span class="k">jot / dictate</span></button></div></div>'+
-      '<span class="badge" style="margin-left:8px">MOCK</span></div>'+
+      '<span class="badge mock" style="margin-left:8px" title="Nothing here is connected to a real source yet — all data + actions are mock">MOCK</span></div>'+
     '<div class="body"><div class="nav" id="nav">'+navHtml()+'<div class="nfoot"><span class="av" style="width:18px;height:18px;background:var(--claySoft);color:var(--clay)">G</span>Gavin · connected</div></div>'+
       '<div class="main"><div class="pane" id="pane"></div></div></div>'+
     '<div class="mnav" id="mnav">'+['dashboard','tasks','approvals','workspace','notes','cockpit'].map(function(v){return '<button data-view="'+v+'" class="'+((S.view===v||(v==='workspace'&&S.view==='workspace'))?'on':'')+'">'+({dashboard:'Home',tasks:'Tasks',approvals:'Approve',workspace:'Agents',notes:'Notes',cockpit:'Cockpit'}[v])+'</button>';}).join('')+'</div>'+
@@ -668,6 +673,7 @@ function workspace(){
     trans=live.length
       ? live.map(function(m){var you=m.agent==='you';return '<div class="msg '+(you?'you':'ag')+'"><span class="av '+(you?'you':(m.agent==='hermes'?'h':''))+'">'+(you?'G':((AGENT_NAME[m.agent]||'A').charAt(0)))+'</span><div class="b"><div class="nm">'+esc(AGENT_NAME[m.agent]||m.agent)+'</div><div class="tx">'+esc(m.text)+'</div></div></div>';}).join('')
       : '<div class="msg ag"><span class="av '+(S.agent==='hermes'?'h':'')+'">'+meta[1]+'</span><div class="b"><div class="nm">'+meta[0]+'</div><div class="tx">No messages yet — say hi to '+meta[0]+'. Your message posts to the shared console, so '+meta[0]+' (and Hermes) can reply right here.</div></div></div>';
+    if(live.length&&live[live.length-1].agent==='you')trans+='<div class="ws-wait">· delivered to the console — waiting for '+esc(meta[0])+' to reply…</div>';
   } else {
     trans='<div class="msg you"><span class="av you">G</span><div class="b"><div class="nm">Gavin <span class="ts">now</span></div><div class="tx">What needs me first?</div></div></div>'+
     '<div class="msg ag"><span class="av '+(S.agent==='hermes'?'h':'')+'">'+meta[1]+'</span><div class="b"><div class="nm">'+meta[0]+' <span class="ts">now</span></div>'+
@@ -691,7 +697,7 @@ function artBody(){
 
 /* ----- COCKPIT ----- */
 function cockpit(){
-  function rowsT(arr){return arr.map(function(a){return '<div class="lrow"><span class="dotg" style="background:'+COL[a[2]]+'"></span><span>'+a[0]+'</span><span class="num pill">'+a[1]+'</span></div>';}).join('');}
+  function rowsT(arr){return arr.map(function(a){var live=a[2]==='pos';return '<div class="lrow'+(live?'':' notlive')+'"><span class="dotg" style="background:'+(live?COL.pos:'var(--dng)')+'"></span><span>'+a[0]+'</span><span class="num pill"'+(live?'':' style="color:var(--dng)"')+'>'+a[1]+'</span></div>';}).join('');}
   var conn=tile('Connections','',rowsT(MOCK.connections.map(function(c){return [c[0],c[1],c[2]];})));
   var jobs=tile('Scheduled jobs','',rowsT(MOCK.jobs));
   var skl=tile('Skills inventory','',MOCK.skills.map(function(s){return '<div class="lrow"><span>'+s[0]+'</span><span class="num pill">'+s[1]+'</span></div>';}).join(''));
@@ -1056,7 +1062,7 @@ function apprCard(a){
     ? '<button class="btn-ok" data-appr-ok="'+a.id+'">Approve</button>'+
       '<button class="btn-no" data-appr-no="'+a.id+'">Reject</button>'+
       '<button class="gbtn" data-appr-edit="'+a.id+'">'+(editing?'Done':'Edit')+'</button>'+
-      '<span class="xs muted" style="margin-left:auto">'+esc(a.created)+' · mock — won’t send</span>'
+      '<span class="xs notlive" style="margin-left:auto">'+esc(a.created)+' · mock — won’t send</span>'
     : '<span class="appr-acts">'+verdict+'</span><span class="xs muted" style="margin-left:auto">'+esc(a.created)+'</span>';
   return '<div class="appr '+(pend?'pend':'resolved')+'" data-appr-id="'+a.id+'">'+
     '<div class="apprhd"><span class="kchip" style="background:'+kc+'22;color:'+kc+'">'+(APPR_KIND[a.kind]||a.kind)+'</span>'+
