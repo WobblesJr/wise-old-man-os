@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Wise Old Man OS — redesign options</title>
+<style>
+:root{--border:#E6E3DC;--surface-1:#F1EFEA;--surface-2:#fff;--text-primary:#1E2329;--text-secondary:#6B7280;--bg-accent:#E6EDF1;--text-accent:#4A6E84}
+*{box-sizing:border-box}
+body{margin:0;background:#ECEAE6;color:#1E2329;font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;padding:20px}
+.wom-wrap{max-width:760px;margin:0 auto}
+.wom-intro{font-size:13px;color:#6B7280;margin:0 2px 14px;line-height:1.5}
+.wom-intro b{color:#1E2329;font-weight:600}
+.wom-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.wom-chip{font-size:12px;padding:6px 11px;border-radius:999px;border:1px solid var(--border);background:var(--surface-1);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:6px}
+.wom-chip.on{background:var(--text-primary);color:var(--surface-2);border-color:transparent}
+.wom-chip .rec{font-size:9px;text-transform:uppercase;letter-spacing:.08em;background:var(--bg-accent);color:var(--text-accent);padding:1px 5px;border-radius:4px}
+.wom-cap{font-size:12.5px;color:var(--text-secondary);margin:0 2px 12px;line-height:1.5;min-height:34px}
+.wom-cap b{font-weight:600;color:var(--text-primary)}
+.wom-frame{border-radius:14px;overflow:hidden;border:1px solid var(--border);box-shadow:0 6px 24px rgba(0,0,0,.07)}
+.wom-app{display:flex;height:560px;background:var(--bg);color:var(--text);font-size:13px}
+.wom-app.serif .agentword,.wom-app.serif .chead h3{font-family:Georgia,'Iowan Old Style',serif}
+.wom-rail{width:212px;flex:0 0 212px;background:var(--railBg);border-right:1px solid var(--border);display:flex;flex-direction:column;position:relative}
+.wom-railhd{padding:13px 14px 8px;font-weight:600;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px}
+.wom-railhd .logo{width:22px;height:22px;border-radius:7px;background:var(--accent);color:var(--railActive);display:grid;place-items:center;font-weight:700;font-size:12px}
+.wom-eyebrow{font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);padding:10px 16px 5px}
+.wom-rows{flex:1;overflow-y:auto;padding:0 8px;position:relative}
+.wom-row{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;cursor:pointer;color:var(--muted);position:relative;transition:background-color .12s ease,color .12s ease}
+.wom-row:hover{background:var(--surface-2);color:var(--text)}
+.wom-row.on{background:var(--railActive);color:var(--text)}
+.wom-av{width:22px;height:22px;border-radius:6px;flex:0 0 auto;display:grid;place-items:center;font-size:11px;font-weight:600;background:var(--surface-2);color:var(--muted)}
+.wom-av.hermes{background:var(--accent);color:var(--railActive)}
+.wom-hash{width:22px;text-align:center;color:var(--muted);font-weight:500}
+.wom-row .lbl{flex:1;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wom-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.wom-row .cnt{font-size:10px;font-weight:600;background:var(--surface-2);color:var(--muted);padding:1px 6px;border-radius:999px}
+.wom-railbar{position:absolute;left:8px;width:3px;height:24px;border-radius:2px;background:var(--accent);transition:transform var(--bar-ms) var(--ease);top:0}
+.wom-railft{padding:9px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+.wom-main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg)}
+.chead{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg)}
+.chead h3{margin:0;font-size:15px;font-weight:600;color:var(--text)}
+.chead .pill{font-size:10.5px;padding:2px 8px;border-radius:6px;background:var(--accentSoft);color:var(--accent)}
+.chead .sub{font-size:11.5px;color:var(--muted)}
+.wom-pane{flex:1;overflow-y:auto;padding:18px}
+.msg{display:flex;gap:11px;margin-bottom:18px}
+.msg .body{flex:1;min-width:0}
+.msg .nm{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px}
+.msg .nm .ts{font-size:11px;color:var(--muted);font-weight:400}
+.msg .txt{font-size:14px;line-height:1.55;color:var(--text);margin-top:3px}
+.wom-app.serif .msg.agent .txt{font-family:Georgia,serif;font-size:14.5px;line-height:1.62}
+.bubble .txt{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:9px 12px;display:inline-block}
+.think{margin-top:9px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accentSoft);border-radius:10px;overflow:hidden}
+.think summary{cursor:pointer;list-style:none;padding:8px 11px;font-size:12px;color:var(--muted);font-weight:500}
+.think summary::-webkit-details-marker{display:none}
+.think .tk{padding:0 11px 10px;font-size:12px;color:var(--muted);line-height:1.5;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+.tool{margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tool .th{display:flex;align-items:center;gap:8px;padding:8px 11px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;color:var(--muted)}
+.tool .th .ok{margin-left:auto;color:var(--positive);font-weight:600}
+.code{margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.code .ch{display:flex;align-items:center;padding:6px 11px;background:var(--surface-2alt);border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+.code .ch .cp{margin-left:auto;cursor:pointer}
+.code pre{margin:0;padding:11px;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:12.5px;line-height:1.6;overflow-x:auto;color:var(--text)}
+.kw{color:var(--kw)}.str{color:var(--str)}.num{color:var(--num)}.com{color:var(--com)}
+.prev{margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.prev .pt{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:7px 11px;border-bottom:1px solid var(--border)}
+.prev .pb{padding:11px}
+.prev .ttl{font-weight:600;font-size:13px;color:var(--text)}
+.prev .ln{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:3px}
+.actions{display:flex;gap:7px;margin-top:10px}
+.btn{font-size:12px;font-weight:600;padding:6px 13px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--railActive);border-color:transparent}
+.composer{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center}
+.composer input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;font-family:inherit}
+.composer .send{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--railActive);border:0;display:grid;place-items:center;cursor:pointer;font-size:15px}
+.caret{display:inline-block;width:2px;height:14px;background:var(--accent);vertical-align:-2px;margin-left:1px;animation:wcar 1s step-end infinite}
+@keyframes wcar{50%{opacity:0}}
+.hpulse{animation:wp 2s ease-in-out infinite}
+@keyframes wp{50%{opacity:.45}}
+.wbcard{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:12px;padding:14px 16px}
+.wbpips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.wbpip{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--border);color:var(--text);display:flex;align-items:center;gap:6px}
+.gt{width:100%;border-collapse:separate;border-spacing:0;font-size:12px}
+.gt th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:7px 9px;border-bottom:1px solid var(--border);font-weight:500}
+.gt td{padding:7px 9px;border-bottom:1px solid var(--border);color:var(--text)}
+.pl{font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px}
+.appr{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.composer{position:relative}
+</style></head>
+<body>
+<div class="wom-wrap">
+  <p class="wom-intro"><b>Wise Old Man OS — 5 redesign options.</b> Calmer, flatter takes on the Slack-style agent layout. Click an option chip to switch skin; click a channel in the rail to feel the transitions.</p>
+  <div class="wom-chips" id="womChips"></div>
+  <div class="wom-cap" id="womCap"></div>
+  <div class="wom-frame"><div class="wom-app" id="womApp">
+    <div class="wom-rail">
+      <div class="wom-railhd"><span class="logo">W</span><span class="agentword">Wise Old Man</span></div>
+      <div class="wom-rows" id="womRows"><div class="wom-railbar" id="womBar"></div></div>
+      <div class="wom-railft"><span class="wom-av" style="width:20px;height:20px">G</span>Gavin · connected</div>
+    </div>
+    <div class="wom-main"><div id="womHead"></div><div class="wom-pane" id="womPane"></div></div>
+  </div></div>
+</div>
+<script>
+(function(){
+  var THEMES=[
+    {key:'daylight',name:'Calm Daylight',rec:true,one:"Bright near-white workspace, one cool slate-blue accent, a hairline left-ledger transcript — silent chrome so only Hermes' live output ever lifts.",
+     v:{bg:'#F7F6F3',surface:'#FFFFFF','surface-2':'#FFFFFF','surface-2alt':'#F1EFEA',border:'#E6E3DC',text:'#1E2329',muted:'#6B7280',accent:'#4A6E84',accentSoft:'#E6EDF1',positive:'#3F8F6F',warning:'#B89055',danger:'#C0564B',railBg:'#F1EFEA',railActive:'#FFFFFF',kw:'#4A6E84',str:'#3F8F6F',num:'#B89055',com:'#9AA1AC'},r:10,ms:180,ease:'cubic-bezier(.22,1,.36,1)',axis:'y',serif:false,bubble:false},
+    {key:'paper',name:'Warm Paper',one:"A cream-paper reading app for your work: serif agent voice, muted ink, one disciplined clay accent — calm, unhurried, never abrasive.",
+     v:{bg:'#FAF6EE',surface:'#FFFCF6','surface-2':'#FFFCF6','surface-2alt':'#FBF1E2',border:'#E6DECF',text:'#36302A',muted:'#6E665B',accent:'#A65A3A',accentSoft:'#FBF1E2',positive:'#5E8C6A',warning:'#B0742A',danger:'#A8503E',railBg:'#F2EADA',railActive:'#FBF1E2',kw:'#9A5740',str:'#5E8C6A',num:'#B0742A',com:'#9A8F7C'},r:10,ms:200,ease:'cubic-bezier(.22,.61,.36,1)',axis:'y',serif:true,bubble:false},
+    {key:'quiet',name:'Quiet Dark',one:"The command center you know, muted: warm charcoal instead of near-black, zero glow, one whispered sage — the only thing that pulses is Hermes.",
+     v:{bg:'#16181D',surface:'#1C1F26','surface-2':'#1C1F26','surface-2alt':'#23272F',border:'#2E333D',text:'#D7DBE0',muted:'#8A909B',accent:'#7FA38C',accentSoft:'#262B33',positive:'#7FA38C',warning:'#C9A36B',danger:'#C77B72',railBg:'#121419',railActive:'#21252C',kw:'#C9A36B',str:'#7FA38C',num:'#C9A36B',com:'#6B7280'},r:12,ms:200,ease:'cubic-bezier(.22,1,.36,1)',axis:'y',serif:false,bubble:false},
+    {key:'studio',name:'Soft Studio',one:"A friendly paper-light studio with gentle per-agent color-coded bubbles — low-saturation and flat, with lavender Hermes owning the room.",
+     v:{bg:'#FBF9F6',surface:'#FFFFFF','surface-2':'#FFFFFF','surface-2alt':'#F7F4EF',border:'#ECE7E0',text:'#2B2A28',muted:'#6E6A63',accent:'#5B7B6F',accentSoft:'#E3EFE9',positive:'#5FA888',warning:'#C08A3E',danger:'#B5564A',railBg:'#F4F0EA',railActive:'#FFFFFF',kw:'#5A4A8A',str:'#3F7A5E',num:'#C08A3E',com:'#9B948A'},r:12,ms:180,ease:'cubic-bezier(.22,.61,.36,1)',axis:'y',serif:false,bubble:true,hermesAv:{bg:'#E7DFF3',fg:'#5A4A8A'}},
+    {key:'mono',name:'Mono Minimal',one:"Near-monochrome greys and ink with one indigo reserved strictly for the active thing and Hermes — typography and a horizontal snap replace the neon.",
+     v:{bg:'#FAF9F7',surface:'#FFFFFF','surface-2':'#FFFFFF','surface-2alt':'#F2F1ED',border:'#E5E3DE',text:'#1C1B1A',muted:'#46443F',accent:'#4F5BD5',accentSoft:'#E7E8F6',positive:'#3F9D6B',warning:'#A55A22',danger:'#B5443A',railBg:'#F2F1ED',railActive:'#FFFFFF',kw:'#46443F',str:'#3F9D6B',num:'#A55A22',com:'#A6A39B'},r:8,ms:200,ease:'cubic-bezier(.22,1,.36,1)',axis:'x',serif:false,bubble:false,hermesAv:{bg:'#E7E8F6',fg:'#4F5BD5'},hmono:'✦'}
+  ];
+  var CH=[
+    {k:'hermes',g:'a',lbl:'Hermes',mono:'H',dot:'positive',hermes:true},
+    {k:'code',g:'a',lbl:'Claude Code',mono:'CC',dot:'warning'},
+    {k:'cowork',g:'a',lbl:'Cowork',mono:'CW',dot:'muted'},
+    {k:'brief',g:'w',lbl:'morning-brief'},
+    {k:'approvals',g:'w',lbl:'approvals',cnt:'2'},
+    {k:'tasks',g:'w',lbl:'tasks'}
+  ];
+  var state={t:0,ch:'hermes'};
+  var PRIO=['#64748b','#3b82f6','#B89055','#C08A3E','#C0564B'];
+  function dotc(t,d){return d==='positive'?t.v.positive:d==='warning'?t.v.warning:t.v.muted;}
+  function rowsHtml(t){var h='<div class="wom-railbar" id="womBar"></div><div class="wom-eyebrow">Agents</div>';
+    CH.filter(function(c){return c.g==='a';}).forEach(function(c){h+=rowHtml(t,c);});
+    h+='<div class="wom-eyebrow">Workspace</div>';CH.filter(function(c){return c.g==='w';}).forEach(function(c){h+=rowHtml(t,c);});return h;}
+  function rowHtml(t,c){var on=state.ch===c.k,av;
+    if(c.g==='a'){var cls=c.hermes?'wom-av hermes':'wom-av',st='',mono=c.mono;
+      if(c.hermes&&t.hermesAv){st='background:'+t.hermesAv.bg+';color:'+t.hermesAv.fg;cls='wom-av';}
+      if(c.hermes&&t.hmono)mono=t.hmono;av='<span class="'+cls+'" style="'+st+'">'+mono+'</span>';}
+    else av='<span class="wom-hash">#</span>';
+    var right=c.g==='a'?'<span class="wom-dot" style="background:'+dotc(t,c.dot)+'"></span>':(c.cnt?'<span class="cnt">'+c.cnt+'</span>':'');
+    return '<div class="wom-row'+(on?' on':'')+'" data-ch="'+c.k+'">'+av+'<span class="lbl">'+c.lbl+'</span>'+right+'</div>';}
+  function av(t,mono,kind){if(kind==='hermes'){if(t.hermesAv)return '<span class="wom-av" style="background:'+t.hermesAv.bg+';color:'+t.hermesAv.fg+'">'+(t.hmono||'H')+'</span>';return '<span class="wom-av hermes">'+(t.hmono||'H')+'</span>';}
+    if(kind==='you')return '<span class="wom-av" style="background:'+t.v.accentSoft+';color:'+t.v.accent+'">G</span>';return '<span class="wom-av">'+mono+'</span>';}
+  function headHtml(t){var c=CH.filter(function(x){return x.k===state.ch;})[0];
+    if(c.g==='a'){var sub=c.hermes?'routing to Claude Code, Cowork, tools':(c.k==='code'?'runs on your Windows machine':'pairing');
+      var pill=c.hermes?'<span class="pill">Orchestrator</span>':'';var live=c.hermes?'<span class="wom-dot hpulse" style="background:'+t.v.positive+'"></span>':'';
+      return '<div class="chead">'+av(t,c.mono,c.hermes?'hermes':'')+'<h3>'+c.lbl+'</h3>'+pill+live+'<span class="sub">'+sub+'</span></div>';}
+    return '<div class="chead"><span class="wom-hash" style="font-size:16px">#</span><h3>'+c.lbl+'</h3><span class="sub">'+(c.k==='brief'?'your 6am War-Board':c.k==='approvals'?'one-tap, draft-everything':'the G-Suite task grid')+'</span></div>';}
+  function paneHtml(t){return ({hermes:hermesPane,code:codePane,cowork:coworkPane,brief:briefPane,approvals:apprPane,tasks:tasksPane}[state.ch])(t);}
+  function bub(t){return t.bubble?' bubble':'';}
+  function hermesPane(t){return '<div class="msg"><div>'+av(t,'G','you')+'</div><div class="body"><div class="nm">Gavin <span class="ts">7:02</span></div><div class="txt">What needs me first this morning?</div></div></div>'+
+    '<div class="msg agent'+bub(t)+'"><div>'+av(t,'H','hermes')+'</div><div class="body"><div class="nm">Hermes <span class="ts">7:02</span></div>'+
+    '<details class="think" open><summary>▾ Reasoning</summary><div class="tk">ranked 8 work tasks by risk × your calendar · 1 red is on you · GC won’t reply before noon → bank the deliverable first</div></details>'+
+    '<div class="txt">Start with <b>RFI-014</b> — it’s the only red that’s on you and it gates the L2 rough-in. I drafted the cover note. The GC won’t respond before noon, so do this in your morning window<span class="caret"></span></div>'+
+    '<div class="tool"><div class="th">GET /api/tasks?scope=work<span class="ok">200 · 120ms</span></div></div>'+
+    '<div class="code"><div class="ch">priority.json<span class="cp">copy</span></div><pre><span class="com"># Hermes set this overlay</span>\n{ <span class="str">"w-t1"</span>: { <span class="str">"level"</span>: <span class="num">4</span>, <span class="str">"why"</span>: <span class="str">"gates L2 rough-in"</span> } }</pre></div>'+
+    '<div class="prev"><div class="pt">Preview · draft</div><div class="pb"><div class="ttl">RFI-014 — cover note to Turner GC</div><div class="ln">Please find RFI-014 attached re: L2 mechanical clearances. A response by Friday keeps the rough-in sequence on track.</div>'+
+    '<div class="actions"><button class="btn primary">Approve &amp; send</button><button class="btn">Skip</button></div></div></div></div></div>'+
+    '<div class="composer"><input placeholder="Message Hermes…"><button class="send">↑</button></div>';}
+  function codePane(t){return '<div class="msg"><div>'+av(t,'G','you')+'</div><div class="body"><div class="nm">Gavin <span class="ts">7:14</span></div><div class="txt">Apply the spacing tokens to the task grid.</div></div></div>'+
+    '<div class="msg agent'+bub(t)+'"><div>'+av(t,'CC','')+'</div><div class="body"><div class="nm">Claude Code <span class="ts">7:14</span></div><div class="txt">Done — applied the 8/12/16/24 scale and collapsed empty bands.</div>'+
+    '<div class="tool"><div class="th">edit preview/index.html<span class="ok">✓ 1 file</span></div></div>'+
+    '<div class="code"><div class="ch">diff</div><pre><span class="str">+ .tile{padding:var(--space-4)}</span>\n<span class="com">- .tile{padding:16px}</span></pre></div>'+
+    '<div class="prev"><div class="pt">Preview</div><div class="pb"><div class="ttl">Tasks grid</div><div class="ln">rendered with the new spacing rhythm · staged as an approval</div></div></div></div></div>'+
+    '<div class="composer"><input placeholder="Message Claude Code…"><button class="send">↑</button></div>';}
+  function coworkPane(t){return '<div class="msg agent'+bub(t)+'"><div>'+av(t,'CW','')+'</div><div class="body"><div class="nm">Cowork <span class="ts">7:20</span></div><div class="txt">I can pair on the Level 3 manpower curve when you are ready — Hermes has the context queued.</div></div></div>'+
+    '<div class="composer"><input placeholder="Message Cowork…"><button class="send">↑</button></div>';}
+  function briefPane(t){return '<div class="wbcard"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--accent);font-weight:600">Morning War-Board</div>'+
+    '<div style="font-size:14px;font-weight:600;margin-top:6px">3 dates in danger · 2 meetings today</div>'+
+    '<div class="wbpips"><span class="wbpip"><span class="wom-dot" style="background:'+t.v.danger+'"></span>Submit RFI-014 · due 06/27</span><span class="wbpip"><span class="wom-dot" style="background:'+t.v.warning+'"></span>Manpower L3 · 06/28</span><span class="wbpip"><span class="wom-dot" style="background:'+t.v.warning+'"></span>Pre-con · 06/29</span></div>'+
+    '<div style="margin-top:12px;background:var(--accentSoft);border-radius:10px;padding:9px 11px;font-size:12.5px;color:var(--text)"><b style="color:var(--accent)">→ Start with</b> &nbsp;Submit RFI on mechanical room clearances</div></div>';}
+  function apprPane(t){function a(ttl,sub,risk){return '<div class="appr"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:600">'+ttl+'</span><span class="pl" style="margin-left:auto;background:'+(risk==='med'?t.v.warning:t.v.positive)+'22;color:'+(risk==='med'?t.v.warning:t.v.positive)+'">'+risk+'</span></div><div style="font-size:12px;color:var(--muted);margin-top:4px">'+sub+'</div><div class="actions"><button class="btn primary">Approve</button><button class="btn">Skip</button></div></div>';}
+    return '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">2 pending · <b style="color:var(--text)">Approve all low-risk</b></div>'+a('Send RFI cover note to GC','Attach RFI-014, request response by Fri','med')+a('Post manpower schedule v0.3','Share in #project-alpha','low');}
+  function tasksPane(t){var rows=[[4,'Submit RFI on mechanical room clearances','06/27','Me','action'],[4,'Manpower-loaded schedule for L3','06/28','Me','action'],[3,'Wait on GC response','07/01','Turner GC','wait'],[1,'VE option on chilled water piping','07/10','Me','hold']];
+    var b='<table class="gt"><thead><tr><th>!</th><th>Description</th><th>Due</th><th>Ball</th><th>Action</th></tr></thead><tbody>';
+    rows.forEach(function(r){b+='<tr><td><span class="pl" style="background:'+PRIO[r[0]]+'22;color:'+PRIO[r[0]]+'">P'+r[0]+'</span></td><td>'+r[1]+'</td><td style="color:var(--muted)">'+r[2]+'</td><td>'+(r[3]==='Me'?'<b style="color:var(--accent)">Me</b>':'<span style="color:var(--muted)">'+r[3]+'</span>')+'</td><td style="color:var(--muted)">'+r[4]+'</td></tr>';});return b+'</tbody></table>';}
+  function applyTheme(){var t=THEMES[state.t],app=document.getElementById('womApp');
+    Object.keys(t.v).forEach(function(k){app.style.setProperty('--'+k,t.v[k]);});
+    app.style.setProperty('--ease',t.ease);app.style.setProperty('--bar-ms',t.ms+'ms');
+    var de=document.documentElement;de.style.setProperty('--border',t.v.border);de.style.setProperty('--surface-1',t.v.railBg);de.style.setProperty('--surface-2',t.v.surface);de.style.setProperty('--text-primary',t.v.text);de.style.setProperty('--text-secondary',t.v.muted);de.style.setProperty('--bg-accent',t.v.accentSoft);de.style.setProperty('--text-accent',t.v.accent);
+    app.className='wom-app'+(t.serif?' serif':'');
+    document.getElementById('womRows').innerHTML=rowsHtml(t);document.getElementById('womHead').innerHTML=headHtml(t);document.getElementById('womPane').innerHTML=paneHtml(t);
+    bindRows();moveBar(false);
+    document.querySelectorAll('.wom-chip').forEach(function(c,i){c.classList.toggle('on',i===state.t);});
+    document.getElementById('womCap').innerHTML='<b>'+t.name+'.</b> '+t.one;}
+  function bindRows(){document.querySelectorAll('.wom-row').forEach(function(r){r.onclick=function(){switchCh(r.getAttribute('data-ch'));};});}
+  function moveBar(anim){var t=THEMES[state.t],active=document.querySelector('.wom-row.on'),bar=document.getElementById('womBar');if(!active||!bar)return;
+    if(!anim)bar.style.transition='none';var off=active.offsetTop+(active.offsetHeight-24)/2;bar.style.transform='translateY('+off+'px)';
+    if(!anim){void bar.offsetWidth;bar.style.transition='transform '+t.ms+'ms '+t.ease;}}
+  function switchCh(k){if(k===state.ch)return;state.ch=k;var t=THEMES[state.t],pane=document.getElementById('womPane');
+    document.querySelectorAll('.wom-row').forEach(function(r){r.classList.toggle('on',r.getAttribute('data-ch')===k);});
+    document.getElementById('womHead').innerHTML=headHtml(t);moveBar(true);
+    pane.style.transition='none';pane.style.opacity='0';pane.style.transform=t.axis==='x'?'translateX(8px)':'translateY(8px)';pane.innerHTML=paneHtml(t);
+    requestAnimationFrame(function(){requestAnimationFrame(function(){pane.style.transition='opacity '+t.ms+'ms '+t.ease+', transform '+t.ms+'ms '+t.ease;pane.style.opacity='1';pane.style.transform='none';});});}
+  function switchTheme(i){if(i===state.t)return;var app=document.getElementById('womApp');app.style.transition='opacity 120ms ease';app.style.opacity='0';setTimeout(function(){state.t=i;applyTheme();app.style.opacity='1';},120);}
+  document.getElementById('womChips').innerHTML=THEMES.map(function(t,i){return '<button class="wom-chip" data-i="'+i+'">'+t.name+(t.rec?' <span class="rec">Rec</span>':'')+'</button>';}).join('');
+  document.querySelectorAll('.wom-chip').forEach(function(c){c.onclick=function(){switchTheme(+c.getAttribute('data-i'));};});
+  applyTheme();
+})();
+</script></body></html>
