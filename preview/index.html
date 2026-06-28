@@ -668,8 +668,11 @@ function workspace(){
   var hs=hermesFor()[0];
   var trans;
   if(isLive()){
-    var to=AGENT_TO[S.agent];
-    var live=(S.console||[]).filter(function(m){return m.agent===to||m.to_agent===to;});
+    // match the channel leniently so a reply shows even if the agent labels itself
+    // 'Hermes' / 'hermes-watcher' / 'Claude Code' rather than the exact id.
+    var ctok={hermes:'hermes',code:'claude',cowork:'cowork'}[S.agent]||S.agent;
+    var chMatch=function(v){return (''+(v||'')).toLowerCase().indexOf(ctok)>=0;};
+    var live=(S.console||[]).filter(function(m){return chMatch(m.agent)||chMatch(m.to_agent);});
     trans=live.length
       ? live.map(function(m){var you=m.agent==='you';return '<div class="msg '+(you?'you':'ag')+'"><span class="av '+(you?'you':(m.agent==='hermes'?'h':''))+'">'+(you?'G':((AGENT_NAME[m.agent]||'A').charAt(0)))+'</span><div class="b"><div class="nm">'+esc(AGENT_NAME[m.agent]||m.agent)+'</div><div class="tx">'+esc(m.text)+'</div></div></div>';}).join('')
       : '<div class="msg ag"><span class="av '+(S.agent==='hermes'?'h':'')+'">'+meta[1]+'</span><div class="b"><div class="nm">'+meta[0]+'</div><div class="tx">No messages yet — say hi to '+meta[0]+'. Your message posts to the shared console, so '+meta[0]+' (and Hermes) can reply right here.</div></div></div>';
@@ -892,7 +895,12 @@ function consoleScope(){return S.scope==='work'?'work':'personal';}
 function loadConsole(){
   if(!isLive())return;
   fetch('/api/console/messages?scope='+consoleScope()+'&limit=80').then(function(r){return r.json();})
-    .then(function(d){S.console=(d&&d.messages)||[];if(S.view==='workspace'&&!isEditing())repaint();}).catch(function(){});
+    .then(function(d){var msgs=(d&&d.messages)||[];
+      var sig=msgs.length+':'+(msgs.length?msgs[msgs.length-1].id:'0');
+      if(sig===S._csig)return;                      // nothing new — skip the re-render
+      S._csig=sig;S.console=msgs;
+      if(S.view==='workspace'&&!isEditing())repaint();
+    }).catch(function(){});
 }
 /* live Hermes layer (SSE when served) */
 function connectHermes(){
