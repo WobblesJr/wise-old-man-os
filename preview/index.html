@@ -538,7 +538,7 @@ var S={scope:'work',view:'dashboard',agent:'hermes',filter:'all',sortCol:'prio',
   activity:[],actFilter:'all',actScope:'all',
   approvals:[],apprFilter:'all',apprEdit:null,chaseJump:true,paletteQuery:'',
   vaultPath:[],vaultExpand:{},vaultIdx:0,
-  freeform:{},_ffTool:'pen',_ffSel:null};
+  freeform:{},_ffTool:'pen',_ffSel:null,console:[]};
 function effTask(t){var e=S.edits[t.id];return e?Object.assign({},t,e):t;}
 function allTasks(){return S.extra[S.scope].concat(MOCK.tasks[S.scope]);}
 function hermesFor(){var dis=S.hdismiss;return S.hermesLive.filter(function(s){return s.scope===S.scope&&!dis[s.id];}).concat((MOCK.hermesSeed[S.scope]||[]).filter(function(s){return !dis[s.id];}));}
@@ -661,11 +661,20 @@ function tasks(){
 function workspace(){
   var meta={hermes:['Hermes','H','orchestrator',true],code:['Claude Code','CC','on your Windows machine',false],cowork:['Cowork','CW','pairing',false]}[S.agent];
   var hs=hermesFor()[0];
-  var trans='<div class="msg you"><span class="av you">G</span><div class="b"><div class="nm">Gavin <span class="ts">now</span></div><div class="tx">What needs me first?</div></div></div>'+
+  var trans;
+  if(isLive()){
+    var to=AGENT_TO[S.agent];
+    var live=(S.console||[]).filter(function(m){return m.agent===to||m.to_agent===to;});
+    trans=live.length
+      ? live.map(function(m){var you=m.agent==='you';return '<div class="msg '+(you?'you':'ag')+'"><span class="av '+(you?'you':(m.agent==='hermes'?'h':''))+'">'+(you?'G':((AGENT_NAME[m.agent]||'A').charAt(0)))+'</span><div class="b"><div class="nm">'+esc(AGENT_NAME[m.agent]||m.agent)+'</div><div class="tx">'+esc(m.text)+'</div></div></div>';}).join('')
+      : '<div class="msg ag"><span class="av '+(S.agent==='hermes'?'h':'')+'">'+meta[1]+'</span><div class="b"><div class="nm">'+meta[0]+'</div><div class="tx">No messages yet — say hi to '+meta[0]+'. Your message posts to the shared console, so '+meta[0]+' (and Hermes) can reply right here.</div></div></div>';
+  } else {
+    trans='<div class="msg you"><span class="av you">G</span><div class="b"><div class="nm">Gavin <span class="ts">now</span></div><div class="tx">What needs me first?</div></div></div>'+
     '<div class="msg ag"><span class="av '+(S.agent==='hermes'?'h':'')+'">'+meta[1]+'</span><div class="b"><div class="nm">'+meta[0]+' <span class="ts">now</span></div>'+
     '<div class="tx">'+(S.agent==='hermes'?(hs?esc(hs.title)+'. '+esc(hs.body):'Start with the RFI — it gates the L2 rough-in. Draft is on the right.'):'On it — staged as an approval; preview on the right.')+'</div>'+
     (S.agent==='hermes'?'<div class="codeb"><div class="ch">priority.json</div><pre>{ "w-t1": { "level": 4, "why": "gates L2 rough-in" } }</pre></div>':'')+'</div></div>'+
     (S.log[S.agent]||[]).map(function(m){return '<div class="msg '+(m.who==='you'?'you':'ag')+'"><span class="av '+(m.who==='you'?'you':(S.agent==='hermes'?'h':''))+'">'+(m.who==='you'?'G':meta[1])+'</span><div class="b"><div class="nm">'+(m.who==='you'?'Gavin':meta[0])+'</div><div class="tx">'+esc(m.text)+'</div></div></div>';}).join('');
+  }
   var conv='<div class="conv"><div class="chead"><span class="av '+(S.agent==='hermes'?'h':'')+'">'+meta[1]+'</span><h3 class="serif">'+meta[0]+'</h3><span class="pill" style="background:var(--claySoft);color:var(--clay)">'+meta[2]+'</span><span class="dotg" style="background:var(--pos)"></span></div>'+
     '<div class="transcript" id="trans">'+trans+'</div>'+
     '<div class="composer"><input id="wsInput" placeholder="Message '+meta[0]+'…"/><button class="send" data-send="1">↑</button></div></div>';
@@ -737,7 +746,7 @@ function paintPane(anim){
 /* repaint only the active pane — keeps focus/caret/scroll in the shell, used for in-view updates */
 function repaint(){paintPane(false);}
 function isEditing(){var a=document.activeElement;return !!a&&(a.tagName==='INPUT'||a.isContentEditable);}
-function go(v,a){S.view=v;if(a)S.agent=a;render(true);}
+function go(v,a){S.view=v;if(a)S.agent=a;render(true);if(v==='workspace')loadConsole();}
 function bind(){
   document.querySelectorAll('[data-view]').forEach(function(el){el.onclick=function(e){e.stopPropagation();go(el.getAttribute('data-view'),el.getAttribute('data-agent')||null);};});
   document.querySelectorAll('[data-scope]').forEach(function(el){el.onclick=function(){S.scope=el.getAttribute('data-scope');render(true);};});
@@ -771,7 +780,12 @@ function bind(){
   if(S.view==='notes'&&S.noteMode==='free')bindFreeform();
 }
 function toast(m){var el=document.getElementById('toastEl');if(!el){el=document.createElement('div');el.id='toastEl';el.className='toast';el.setAttribute('role','status');document.body.appendChild(el);}el.textContent=m;el.style.display='block';clearTimeout(window._tt);window._tt=setTimeout(function(){el.style.display='none';},2400);}
-function sendMsg(){var inp=document.getElementById('wsInput');if(!inp||!inp.value.trim())return;var v=inp.value.trim();S.log[S.agent]=(S.log[S.agent]||[]).concat([{who:'you',text:v},{who:'ag',text:'(mock) Got it — wire creds to act for real.'}]);inp.value='';repaint();}
+function sendMsg(){var inp=document.getElementById('wsInput');if(!inp||!inp.value.trim())return;var v=inp.value.trim();inp.value='';
+  if(isLive()){var to=AGENT_TO[S.agent]||'hermes';
+    S.console=(S.console||[]).concat([{id:'tmp-'+Date.now(),agent:'you',to_agent:to,text:v,scope:consoleScope()}]);repaint();
+    fetch('/api/console/message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope:consoleScope(),agent:'you',to_agent:to,text:v})}).then(function(r){return r.json();}).then(function(){loadConsole();}).catch(function(){loadConsole();});
+  }else{S.log[S.agent]=(S.log[S.agent]||[]).concat([{who:'you',text:v},{who:'ag',text:'(mock) Got it — wire creds to act for real.'}]);repaint();}
+}
 
 /* tasks: add-row + inline cell editing (commits in place — never rebuilds the grid mid-edit) */
 function findTask(id){var a=allTasks();for(var i=0;i<a.length;i++)if(a[i].id===id)return a[i];return null;}
@@ -864,6 +878,16 @@ document.addEventListener('keydown',function(e){
 /* inline-edit commit — registered once (not per render) */
 document.addEventListener('focusout',taskCommit);
 
+/* multi-agent console — real /api/console/* when served by the backend (mock fallback on file://) */
+var AGENT_TO={hermes:'hermes',code:'claude-code',cowork:'cowork'};
+var AGENT_NAME={you:'Gavin',hermes:'Hermes','claude-code':'Claude Code',cowork:'Cowork'};
+function isLive(){return location.protocol.indexOf('http')===0;}
+function consoleScope(){return S.scope==='work'?'work':'personal';}
+function loadConsole(){
+  if(!isLive())return;
+  fetch('/api/console/messages?scope='+consoleScope()+'&limit=80').then(function(r){return r.json();})
+    .then(function(d){S.console=(d&&d.messages)||[];if(S.view==='workspace'&&!isEditing())repaint();}).catch(function(){});
+}
 /* live Hermes layer (SSE when served) */
 function connectHermes(){
   if(location.protocol.indexOf('http')!==0||typeof EventSource==='undefined')return;
@@ -871,6 +895,7 @@ function connectHermes(){
     es.onmessage=function(ev){var d;try{d=JSON.parse(ev.data);}catch(e){return;}
       if(d.type==='agent_signal'){var sg=d.signal;S.hermesLive.unshift({id:sg.id,scope:sg.scope,kind:sg.kind,title:sg.title,body:sg.body,conf:sg.confidence});
         if(sg.scope===S.scope){toast('✦ Hermes: '+sg.title);if(!isEditing()&&(S.view==='dashboard'||S.view==='workspace'))repaint();}}
+      else if(d.type==='console_message'){loadConsole();if(S.view!=='workspace'&&d.msg&&d.msg.agent!=='you')toast('💬 '+(AGENT_NAME[d.msg.agent]||d.msg.agent)+': '+(d.msg.text||'').slice(0,48));}
     };
   }catch(e){}
 }
@@ -1796,6 +1821,7 @@ loadActivity();                                  // seed S.activity from localSt
 S.approvals=(MOCK.approvals||[]).slice();         // seed the approvals queue
 render(false);
 connectHermes();
+loadConsole();
 if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){navigator.serviceWorker.register('/preview/sw.js').catch(function(){});}
 </script>
 </body>
