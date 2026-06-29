@@ -21,11 +21,12 @@ Env (read from the process env, or from backend/.env / .env if present — never
   WOM_CLAUDE_BIN      path to the claude CLI (default: 'claude')
 
 Usage:
-  # subscription (no API key) — drives the claude CLI:
+  # subscription chat (no API key) — drives the claude CLI, reply-only:
   python3 tools/console_worker.py --agent claude-code --engine cli
-  # API key:
+  # READ-ONLY propose — Claude Code reads the repo + proposes a diff + git commands you review/run:
+  python3 tools/console_worker.py --agent claude-code --engine cli --propose
+  # API key (chat):
   python3 tools/console_worker.py --agent hermes,claude-code
-  python3 tools/console_worker.py --agent hermes --backfill     # also answer history once
 """
 from __future__ import annotations
 
@@ -104,16 +105,47 @@ def generate_reply(api_key: str, model: str, persona: str, thread: list[dict], m
     return ("".join(parts)).strip() or "(no reply)"
 
 
-def generate_reply_cli(claude_bin: str, model: str, persona: str, thread: list[dict], me: str) -> str:
-    """Generate a reply by invoking the `claude` CLI headlessly (uses the subscription login)."""
+# Propose mode (--propose): READ-ONLY. The agent reads the repo and proposes a change
+# (plan + diff + the git commands to land it) for Gavin to review and run. It cannot edit,
+# run shell, or push — so it's safe and human-gated (you apply / approve).
+PROPOSE_TOOLS = "Read,Glob,Grep"
+PROPOSE_PERSONA = (
+    "You have READ-ONLY access to the 'Wise Old Man OS' repo on Gavin's machine: you can read files but "
+    "cannot edit, run shell, or push from here. When Gavin asks for a change, PROPOSE it so he can review "
+    "and land it: (1) a 1-2 line plan, (2) a unified diff in a ```diff code block, (3) the exact git "
+    "commands to apply it on a feature branch and push (checkout -b, commit, push -u). Read the real files "
+    "so the diff is accurate. Be explicit that you have NOT applied anything — Gavin reviews and runs the "
+    "commands (or approves) to land it. For a plain question, just answer it."
+)
+
+
+def generate_reply_cli(claude_bin: str, model: str, persona: str, thread: list[dict], me: str,
+                       propose: bool = False) -> str:
+    """Reply via the headless `claude` CLI (subscription login).
+
+    propose=False : reply-only chat (no tools).
+    propose=True  : READ-ONLY — can read the repo and propose a change (diff + git commands); never executes.
+    """
     convo = "\n".join(f"{NAMES.get(m['agent'], m['agent'])}: {m['text']}" for m in thread[-12:])
-    user = (f"This is the Workspace chat thread (most recent last):\n\n{convo}\n\n"
-            f"Write {NAMES.get(me, me)}'s next reply to the most recent message. "
-            f"Reply with the message text only — do not use tools or take any actions.")
-    cmd = [claude_bin, "-p", user, "--output-format", "text", "--append-system-prompt", persona]
+    if propose:
+        user = (f"Workspace chat thread (most recent last):\n\n{convo}\n\n"
+                f"Respond to the most recent message as {NAMES.get(me, me)}. If it asks for a repo/code change, "
+                f"PROPOSE it (plan + unified diff + the git commands to apply on a branch and push) for Gavin to "
+                f"review and run — you are read-only and must not edit or execute anything. If it's a question, answer it.")
+        sysp = persona + "\n\n" + PROPOSE_PERSONA
+        tools = PROPOSE_TOOLS
+    else:
+        user = (f"This is the Workspace chat thread (most recent last):\n\n{convo}\n\n"
+                f"Write {NAMES.get(me, me)}'s next reply to the most recent message. "
+                f"Reply with the message text only — do not use tools or take any actions.")
+        sysp = persona
+        tools = None
+    cmd = [claude_bin, "-p", user, "--output-format", "text", "--append-system-prompt", sysp]
     if model:
         cmd += ["--model", model]
-    out = subprocess.run(cmd, capture_output=True, text=True, timeout=240)
+    if tools:
+        cmd += ["--allowedTools", tools]
+    out = subprocess.run(cmd, capture_output=True, text=True, timeout=(420 if propose else 240))
     if out.returncode != 0:
         raise RuntimeError((out.stderr or out.stdout or "claude CLI failed").strip()[:400])
     return (out.stdout or "").strip() or "(no reply)"
@@ -143,6 +175,9 @@ def main() -> int:
                     help="comma list of agent ids to answer for: hermes,claude-code,cowork")
     ap.add_argument("--poll", type=float, default=4.0, help="seconds between polls")
     ap.add_argument("--backfill", action="store_true", help="also answer messages already in history")
+    ap.add_argument("--propose", action="store_true",
+                    help="READ-ONLY propose mode (cli only): the agent reads the repo and proposes a diff + "
+                         "git commands for you to review/run. It never edits, runs shell, or pushes.")
     ap.add_argument("--engine", choices=["api", "cli"], default="api",
                     help="reply engine: 'api' (ANTHROPIC_API_KEY) or 'cli' (your Claude subscription)")
     ap.add_argument("--claude-bin", default=os.environ.get("WOM_CLAUDE_BIN", "claude"),
@@ -171,6 +206,8 @@ def main() -> int:
         if not shutil.which(args.claude_bin):
             print("The 'claude' CLI was not found (looked for '%s'). Install Claude Code + run `claude login`, "
                   "or pass --claude-bin /path/to/claude." % args.claude_bin); return 2
+    if args.propose and args.engine != "cli":
+        print("--propose requires --engine cli (the subscription CLI)."); return 2
 
     # initialize 'seen' watermark so we don't answer the whole backlog unless asked
     seen = {a: (0 if args.backfill else load_seen(a)) for a in agents}
@@ -183,8 +220,9 @@ def main() -> int:
         except Exception as e:
             print("Could not reach the backend at %s: %s" % (base, e)); return 2
 
-    print("console_worker up — answering for %s against %s via %s%s. Ctrl-C to stop."
-          % (", ".join(agents), base, args.engine, (" ("+model+")" if model else "")))
+    print("console_worker up — answering for %s against %s via %s%s%s. Ctrl-C to stop."
+          % (", ".join(agents), base, args.engine, (" ("+model+")" if model else ""),
+             (" · PROPOSE (read-only)" if args.propose else "")))
     while True:
         try:
             msgs = fetch_messages(base, token)
@@ -194,7 +232,7 @@ def main() -> int:
                 todo = [m for m in msgs if m["id"] > seen[a] and m.get("to_agent") == a and m.get("agent") != a]
                 for m in todo:
                     try:
-                        reply = (generate_reply_cli(args.claude_bin, model, persona, msgs, a)
+                        reply = (generate_reply_cli(args.claude_bin, model, persona, msgs, a, propose=args.propose)
                                  if args.engine == "cli"
                                  else generate_reply(api_key, model, persona, msgs, a))
                         post_message(base, token, m.get("scope", "work"), a, m.get("agent", "you"), reply)
