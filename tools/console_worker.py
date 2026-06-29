@@ -147,12 +147,14 @@ def main() -> int:
                     help="reply engine: 'api' (ANTHROPIC_API_KEY) or 'cli' (your Claude subscription)")
     ap.add_argument("--claude-bin", default=os.environ.get("WOM_CLAUDE_BIN", "claude"),
                     help="path to the claude CLI (for --engine cli)")
+    ap.add_argument("--base-url", default=os.environ.get("WOM_BASE_URL", "http://127.0.0.1:8787"),
+                    help="backend base URL (default http://127.0.0.1:8787 or $WOM_BASE_URL)")
     args = ap.parse_args()
 
     load_dotenv()
     token = os.environ.get("WOM_SERVICE_TOKEN", "")
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-    base = os.environ.get("WOM_BASE_URL", "http://127.0.0.1:8787").rstrip("/")
+    base = args.base_url.rstrip("/")
     model = os.environ.get("WOM_WORKER_MODEL", "")  # api falls back below; cli uses its own default
 
     agents = [a.strip() for a in args.agent.split(",") if a.strip() in PERSONAS]
