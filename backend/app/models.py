@@ -67,7 +67,9 @@ class AgentSignalIn(BaseModel):
 class ConsoleMessageIn(BaseModel):
     """A message into the shared multi-agent console."""
     text: str
-    to_agent: str = Field(default="hermes", pattern="^(hermes|claude-code|cowork)$")
+    # recipient id — open bus: you | hermes | claude-code | cowork | a connector (discord, github…).
+    # (Was locked to the 3 agents, which 422'd replies addressed to 'you'.)
+    to_agent: str = "hermes"
     agent: str = "you"                    # who is speaking (default: the user)
     scope: Optional[str] = "work"
 
