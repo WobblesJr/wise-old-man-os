@@ -8,20 +8,28 @@ back (/api/console/message). Run this on the SAME host as the backend that serve
 your live site (it talks to it over localhost with the service token, so it never
 needs to go through Cloudflare Access).
 
-Env (read from the process env, or from backend/.env if present — never printed):
-  WOM_SERVICE_TOKEN   bearer token the backend accepts as a 'machine' identity
-  ANTHROPIC_API_KEY   key used to generate replies
+Two engines for generating the reply:
+  --engine api  (default)  via the Anthropic API   — needs ANTHROPIC_API_KEY
+  --engine cli             via the `claude` CLI     — uses your Claude SUBSCRIPTION login,
+                           NO API key needed (`claude` must be installed + `claude login` done)
+
+Env (read from the process env, or from backend/.env / .env if present — never printed):
+  WOM_SERVICE_TOKEN   bearer token the backend accepts as a 'machine' identity (required)
+  ANTHROPIC_API_KEY   key used to generate replies            (only for --engine api)
   WOM_BASE_URL        backend base URL (default http://127.0.0.1:8787)
-  WOM_WORKER_MODEL    model id (default claude-sonnet-4-6)
+  WOM_WORKER_MODEL    optional model id (api default: claude-sonnet-4-6; cli: the CLI default)
+  WOM_CLAUDE_BIN      path to the claude CLI (default: 'claude')
 
 Usage:
-  python tools/console_worker.py --agent hermes,claude-code
-  python tools/console_worker.py --agent claude-code --poll 4
-  python tools/console_worker.py --agent hermes --backfill     # also answer history once
+  # subscription (no API key) — drives the claude CLI:
+  python3 tools/console_worker.py --agent claude-code --engine cli
+  # API key:
+  python3 tools/console_worker.py --agent hermes,claude-code
+  python3 tools/console_worker.py --agent hermes --backfill     # also answer history once
 """
 from __future__ import annotations
 
-import argparse, json, os, sys, time, urllib.request, urllib.error
+import argparse, json, os, shutil, subprocess, sys, time, urllib.request, urllib.error
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -96,6 +104,21 @@ def generate_reply(api_key: str, model: str, persona: str, thread: list[dict], m
     return ("".join(parts)).strip() or "(no reply)"
 
 
+def generate_reply_cli(claude_bin: str, model: str, persona: str, thread: list[dict], me: str) -> str:
+    """Generate a reply by invoking the `claude` CLI headlessly (uses the subscription login)."""
+    convo = "\n".join(f"{NAMES.get(m['agent'], m['agent'])}: {m['text']}" for m in thread[-12:])
+    user = (f"This is the Workspace chat thread (most recent last):\n\n{convo}\n\n"
+            f"Write {NAMES.get(me, me)}'s next reply to the most recent message. "
+            f"Reply with the message text only — do not use tools or take any actions.")
+    cmd = [claude_bin, "-p", user, "--output-format", "text", "--append-system-prompt", persona]
+    if model:
+        cmd += ["--model", model]
+    out = subprocess.run(cmd, capture_output=True, text=True, timeout=240)
+    if out.returncode != 0:
+        raise RuntimeError((out.stderr or out.stdout or "claude CLI failed").strip()[:400])
+    return (out.stdout or "").strip() or "(no reply)"
+
+
 def state_path(agent: str) -> Path:
     return ROOT / "tools" / f".console_worker_{agent}.json"
 
@@ -120,21 +143,32 @@ def main() -> int:
                     help="comma list of agent ids to answer for: hermes,claude-code,cowork")
     ap.add_argument("--poll", type=float, default=4.0, help="seconds between polls")
     ap.add_argument("--backfill", action="store_true", help="also answer messages already in history")
+    ap.add_argument("--engine", choices=["api", "cli"], default="api",
+                    help="reply engine: 'api' (ANTHROPIC_API_KEY) or 'cli' (your Claude subscription)")
+    ap.add_argument("--claude-bin", default=os.environ.get("WOM_CLAUDE_BIN", "claude"),
+                    help="path to the claude CLI (for --engine cli)")
     args = ap.parse_args()
 
     load_dotenv()
     token = os.environ.get("WOM_SERVICE_TOKEN", "")
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     base = os.environ.get("WOM_BASE_URL", "http://127.0.0.1:8787").rstrip("/")
-    model = os.environ.get("WOM_WORKER_MODEL", "claude-sonnet-4-6")
+    model = os.environ.get("WOM_WORKER_MODEL", "")  # api falls back below; cli uses its own default
 
     agents = [a.strip() for a in args.agent.split(",") if a.strip() in PERSONAS]
     if not agents:
         print("No valid --agent (choose from: %s)" % ", ".join(PERSONAS)); return 2
     if not token or token.startswith("__STUB"):
         print("WOM_SERVICE_TOKEN is not set (or is a stub). Set it so the worker can authenticate."); return 2
-    if not api_key:
-        print("ANTHROPIC_API_KEY is not set. Set it so the worker can generate replies."); return 2
+    if args.engine == "api":
+        if not api_key:
+            print("ANTHROPIC_API_KEY is not set. Set it, or use --engine cli to use your Claude subscription."); return 2
+        if not model:
+            model = "claude-sonnet-4-6"
+    else:  # cli (subscription)
+        if not shutil.which(args.claude_bin):
+            print("The 'claude' CLI was not found (looked for '%s'). Install Claude Code + run `claude login`, "
+                  "or pass --claude-bin /path/to/claude." % args.claude_bin); return 2
 
     # initialize 'seen' watermark so we don't answer the whole backlog unless asked
     seen = {a: (0 if args.backfill else load_seen(a)) for a in agents}
@@ -147,8 +181,8 @@ def main() -> int:
         except Exception as e:
             print("Could not reach the backend at %s: %s" % (base, e)); return 2
 
-    print("console_worker up — answering for %s against %s (model %s). Ctrl-C to stop."
-          % (", ".join(agents), base, model))
+    print("console_worker up — answering for %s against %s via %s%s. Ctrl-C to stop."
+          % (", ".join(agents), base, args.engine, (" ("+model+")" if model else "")))
     while True:
         try:
             msgs = fetch_messages(base, token)
@@ -158,7 +192,9 @@ def main() -> int:
                 todo = [m for m in msgs if m["id"] > seen[a] and m.get("to_agent") == a and m.get("agent") != a]
                 for m in todo:
                     try:
-                        reply = generate_reply(api_key, model, persona, msgs, a)
+                        reply = (generate_reply_cli(args.claude_bin, model, persona, msgs, a)
+                                 if args.engine == "cli"
+                                 else generate_reply(api_key, model, persona, msgs, a))
                         post_message(base, token, m.get("scope", "work"), a, m.get("agent", "you"), reply)
                         print("  %s -> %s: %s" % (a, m.get("agent"), reply[:80]))
                     except Exception as e:

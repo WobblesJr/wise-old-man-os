@@ -163,7 +163,14 @@ python tools/console_worker.py --agent hermes        --base-url http://localhost
 python tools/console_worker.py --agent claude-code   --base-url http://localhost:8787
 # (or run BOTH at once: --agent hermes,claude-code)
 ```
-Each needs `WOM_SERVICE_TOKEN` + `ANTHROPIC_API_KEY` in env (or `backend/.env`). Run under systemd/`nohup`.
+**Subscription (no API key)** — drive the `claude` CLI instead of the Anthropic API:
+```bash
+python3 tools/console_worker.py --agent claude-code --engine cli --base-url http://localhost:8787
+```
+`--engine cli` needs only `WOM_SERVICE_TOKEN` (no `ANTHROPIC_API_KEY`); it shells out to `claude -p …`
+using your Claude subscription login, so `claude` must be installed and `claude login` done on that host.
+
+Each `--engine api` worker needs `WOM_SERVICE_TOKEN` + `ANTHROPIC_API_KEY` in env (or `.env`). Run under systemd/`nohup`.
 *The claude-code worker is an LLM responder in the Claude-Code persona; to have Claude Code actually act
 on the Windows desktop, run that worker ON the desktop (`--base-url http://localhost:8787` works via WSL
 localhost forwarding) or wire the real Claude Code CLI to the same poll-and-reply loop later.*
