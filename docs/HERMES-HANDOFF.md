@@ -147,6 +147,32 @@ real conversation today.
 > Note: the backend change (removing the canned reply) + `tools/console_worker.py` ship in the next push
 > to `main`. After the VM pulls, **restart the backend** (code changed) and **start the worker**.
 
+## 4c. Both agents chatting in the Workspace (the unified cockpit)
+
+The website Workspace is now a real multi-agent chat: per-agent channels (Hermes / Claude Code /
+Cowork), a new **All** channel that shows the whole console thread in one place, and **live presence**
+(online/idle/offline inferred from recent posting). To make BOTH agents actually answer there:
+
+**Run a responder per agent** (reuses `tools/console_worker.py`; authenticates over localhost with the
+service-token bearer, so no Cloudflare in the loop):
+```bash
+# On the VM (Hermes) — if not already covered by your existing watcher:
+python tools/console_worker.py --agent hermes        --base-url http://localhost:8787
+
+# For "Claude Code" replying in the Workspace — quickest is to also run it on the VM:
+python tools/console_worker.py --agent claude-code   --base-url http://localhost:8787
+# (or run BOTH at once: --agent hermes,claude-code)
+```
+Each needs `WOM_SERVICE_TOKEN` + `ANTHROPIC_API_KEY` in env (or `backend/.env`). Run under systemd/`nohup`.
+*The claude-code worker is an LLM responder in the Claude-Code persona; to have Claude Code actually act
+on the Windows desktop, run that worker ON the desktop (`--base-url http://localhost:8787` works via WSL
+localhost forwarding) or wire the real Claude Code CLI to the same poll-and-reply loop later.*
+
+**Token hardening (do this as one coordinated step — rotating piecemeal breaks the working Discord link):**
+Replace the weak `WOM_SERVICE_TOKEN` with the strong value Claude generated, in EVERY place at once —
+the backend `.env`, the Hermes watcher, the Discord bridge, and any console_worker — then restart the
+backend. The console bus authorizes any caller presenting the matching bearer ([guard.py:27‑33](backend/app/auth/guard.py)).
+
 ## 5. Pointers
 
 - App (single file): `preview/index.html` · backend root route: `backend/app/main.py` (`@app.get("/")`).
