@@ -1,0 +1,24 @@
+[Unit]
+Description=Wise Old Man OS — Claude Code console responder (read-only propose)
+After=network-online.target wom.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Runs as your user so the `claude` CLI finds your subscription login in ~/.claude.
+# EDIT user/paths if yours differ (these match gavin@GavsComputer):
+User=gavin
+Group=gavin
+WorkingDirectory=/home/gavin/wise-old-man-os
+Environment=HOME=/home/gavin
+# Cover both claude install locations: apt (/usr/bin) and native installer (~/.local/bin)
+Environment=PATH=/home/gavin/.local/bin:/usr/local/bin:/usr/bin:/bin
+# WOM_SERVICE_TOKEN comes from .env (the worker also auto-loads it). '-' = don't fail if missing.
+EnvironmentFile=-/home/gavin/wise-old-man-os/.env
+# The responder. Change the args to taste (drop --propose for plain chat; add hermes; etc.)
+ExecStart=/usr/bin/python3 /home/gavin/wise-old-man-os/tools/console_worker.py --agent claude-code --engine cli --propose
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
