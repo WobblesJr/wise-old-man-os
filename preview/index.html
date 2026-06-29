@@ -551,7 +551,7 @@ function hermesFor(){var dis=S.hdismiss;return S.hermesLive.filter(function(s){r
 /* ===================== NAV ===================== */
 var NAV=[
   {grp:'primary',items:[['Dashboard','dashboard','▦'],['Tasks','tasks','▤'],['Approvals','approvals','✓']]},
-  {grp:'agents',items:[['Workspace','workspace','◇'],['Hermes','workspace','H',1,'hermes'],['Claude Code','workspace','CC',1,'code'],['Cowork','workspace','CW',1,'cowork']]},
+  {grp:'agents',items:[['Workspace','workspace','◇'],['All','workspace','◎',1,'all'],['Hermes','workspace','H',1,'hermes'],['Claude Code','workspace','CC',1,'code'],['Cowork','workspace','CW',1,'cowork']]},
   {grp:'more',items:[['Cockpit','cockpit','◷'],['Activity','activity','❡'],['Notes','notes','✎']]}
 ];
 function accent(){return 'var(--clay)';}
@@ -563,7 +563,7 @@ function navHtml(){
       var on=(it[1]===S.view)&&(!it[3]||(it[1]==='workspace'&&S.agent===it[4]));
       if(it[1]==='workspace'&&!it[3])on=(S.view==='workspace');
       var ic=it[3]?'<span class="av '+(it[4]==='hermes'?'h':'')+'">'+it[2]+'</span>':'<span class="ic">'+it[2]+'</span>';
-      var dot=g.grp==='agents'&&it[3]?'<span class="dot" style="background:'+(it[4]==='hermes'?'var(--pos)':it[4]==='code'?'var(--warn)':'var(--mut)')+'"></span>':'';
+      var dot=g.grp==='agents'&&it[3]?'<span class="dot" style="background:'+presenceColor(it[4])+'"></span>':'';
       return '<div class="nrow '+(it[3]?'sub':'')+(on?' on':'')+'" tabindex="0" role="button" aria-current="'+(on?'page':'false')+'" data-view="'+it[1]+'" data-agent="'+(it[4]||'')+'">'+ic+'<span class="lbl">'+it[0]+'</span>'+dot+'</div>';
     }).join('');
     return '<div class="'+cls+'">'+eb+rows+'</div>';
@@ -664,19 +664,19 @@ function tasks(){
 
 /* ----- WORKSPACE ----- */
 function workspace(){
-  var meta={hermes:['Hermes','H','orchestrator',true],code:['Claude Code','CC','on your Windows machine',false],cowork:['Cowork','CW','pairing',false]}[S.agent];
+  var meta={hermes:['Hermes','H','orchestrator',true],code:['Claude Code','CC','on your Windows machine',false],cowork:['Cowork','CW','pairing',false],all:['All agents','◎','everyone in one place',false]}[S.agent]||['All agents','◎','everyone in one place',false];
   var hs=hermesFor()[0];
   var trans;
   if(isLive()){
     // match the channel leniently so a reply shows even if the agent labels itself
     // 'Hermes' / 'hermes-watcher' / 'Claude Code' rather than the exact id.
-    var ctok={hermes:'hermes',code:'claude',cowork:'cowork'}[S.agent]||S.agent;
+    var ctok=AGENT_TOK[S.agent]||S.agent;
     var chMatch=function(v){return (''+(v||'')).toLowerCase().indexOf(ctok)>=0;};
-    var live=(S.console||[]).filter(function(m){return chMatch(m.agent)||chMatch(m.to_agent);});
+    var live=(S.agent==='all')?(S.console||[]).slice():(S.console||[]).filter(function(m){return chMatch(m.agent)||chMatch(m.to_agent);});
     trans=live.length
       ? live.map(function(m){var you=m.agent==='you';return '<div class="msg '+(you?'you':'ag')+'"><span class="av '+(you?'you':(m.agent==='hermes'?'h':''))+'">'+(you?'G':((AGENT_NAME[m.agent]||'A').charAt(0)))+'</span><div class="b"><div class="nm">'+esc(AGENT_NAME[m.agent]||m.agent)+'</div><div class="tx">'+esc(m.text)+'</div></div></div>';}).join('')
       : '<div class="msg ag"><span class="av '+(S.agent==='hermes'?'h':'')+'">'+meta[1]+'</span><div class="b"><div class="nm">'+meta[0]+'</div><div class="tx">No messages yet — say hi to '+meta[0]+'. Your message posts to the shared console, so '+meta[0]+' (and Hermes) can reply right here.</div></div></div>';
-    if(live.length&&live[live.length-1].agent==='you')trans+='<div class="ws-wait">· delivered to the console — waiting for '+esc(meta[0])+' to reply…</div>';
+    if(S.agent!=='all'&&live.length&&live[live.length-1].agent==='you')trans+='<div class="ws-wait">· delivered to the console — waiting for '+esc(meta[0])+' to reply…</div>';
   } else {
     trans='<div class="msg you"><span class="av you">G</span><div class="b"><div class="nm">Gavin <span class="ts">now</span></div><div class="tx">What needs me first?</div></div></div>'+
     '<div class="msg ag"><span class="av '+(S.agent==='hermes'?'h':'')+'">'+meta[1]+'</span><div class="b"><div class="nm">'+meta[0]+' <span class="ts">now</span></div>'+
@@ -684,9 +684,13 @@ function workspace(){
     (S.agent==='hermes'?'<div class="codeb"><div class="ch">priority.json</div><pre>{ "w-t1": { "level": 4, "why": "gates L2 rough-in" } }</pre></div>':'')+'</div></div>'+
     (S.log[S.agent]||[]).map(function(m){return '<div class="msg '+(m.who==='you'?'you':'ag')+'"><span class="av '+(m.who==='you'?'you':(S.agent==='hermes'?'h':''))+'">'+(m.who==='you'?'G':meta[1])+'</span><div class="b"><div class="nm">'+(m.who==='you'?'Gavin':meta[0])+'</div><div class="tx">'+esc(m.text)+'</div></div></div>';}).join('');
   }
-  var conv='<div class="conv"><div class="chead"><span class="av '+(S.agent==='hermes'?'h':'')+'">'+meta[1]+'</span><h3 class="serif">'+meta[0]+'</h3><span class="pill" style="background:var(--claySoft);color:var(--clay)">'+meta[2]+'</span><span class="dotg" style="background:var(--pos)"></span></div>'+
+  var presence=(S.agent==='all')
+    ? '<span class="xs muted" style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap">'+['hermes','code','cowork'].map(function(k){return '<span style="display:flex;align-items:center;gap:4px"><span class="dotg" style="background:'+presenceColor(k)+'"></span>'+({hermes:'Hermes',code:'Claude Code',cowork:'Cowork'}[k])+'</span>';}).join('')+'</span>'
+    : '<span class="xs muted" style="margin-left:auto;display:flex;align-items:center;gap:5px" title="based on recent activity"><span class="dotg" style="background:'+presenceColor(S.agent)+'"></span>'+agentStatus(S.agent)+'</span>';
+  var ph=(S.agent==='all')?'Message the team (goes to Hermes)…':'Message '+meta[0]+'…';
+  var conv='<div class="conv"><div class="chead"><span class="av '+(S.agent==='hermes'?'h':'')+'">'+meta[1]+'</span><h3 class="serif">'+meta[0]+'</h3><span class="pill" style="background:var(--claySoft);color:var(--clay)">'+meta[2]+'</span>'+presence+'</div>'+
     '<div class="transcript" id="trans">'+trans+'</div>'+
-    '<div class="composer"><input id="wsInput" placeholder="Message '+meta[0]+'…"/><button class="send" data-send="1">↑</button></div></div>';
+    '<div class="composer"><input id="wsInput" placeholder="'+ph+'"/><button class="send" data-send="1">↑</button></div></div>';
   var tabs=['preview','code','diff'].map(function(t){return '<span class="t'+(S.wsTab===t?' on':'')+'" data-wstab="'+t+'">'+t.charAt(0).toUpperCase()+t.slice(1)+'</span>';}).join('');
   var art='<div class="art"><div class="tabs">'+tabs+'<span style="margin-left:auto"></span></div><div class="mat">'+artBody()+'</div>'+
     '<div class="xs muted" style="padding:8px 14px;border-top:1px solid var(--border);display:flex;gap:10px"><span>build ok</span><span>· /drafts/rfi-014</span><span style="margin-left:auto;color:var(--pos)">✓</span></div></div>';
@@ -888,8 +892,13 @@ document.addEventListener('keydown',function(e){
 document.addEventListener('focusout',taskCommit);
 
 /* multi-agent console — real /api/console/* when served by the backend (mock fallback on file://) */
-var AGENT_TO={hermes:'hermes',code:'claude-code',cowork:'cowork'};
+var AGENT_TO={hermes:'hermes',code:'claude-code',cowork:'cowork',all:'hermes'};
 var AGENT_NAME={you:'Gavin',hermes:'Hermes','claude-code':'Claude Code',cowork:'Cowork'};
+var AGENT_TOK={hermes:'hermes',code:'claude',cowork:'cowork'};
+/* presence inferred from how recently an agent posted on the bus (no backend change) */
+function agentLastTs(tok){var last=0;(S.console||[]).forEach(function(m){if(m.agent&&m.agent!=='you'&&(''+m.agent).toLowerCase().indexOf(tok)>=0){var t=Date.parse(m.ts||0)||0;if(t>last)last=t;}});return last;}
+function agentStatus(key){if(key==='all'){var s=['hermes','code','cowork'].map(agentStatus);return s.indexOf('online')>=0?'online':s.indexOf('idle')>=0?'idle':'offline';}var last=agentLastTs(AGENT_TOK[key]||key);if(!last)return 'offline';var age=Date.now()-last;return age<120000?'online':age<1800000?'idle':'offline';}
+function presenceColor(key){return {online:'var(--pos)',idle:'var(--warn)',offline:'var(--mut)'}[agentStatus(key)];}
 function isLive(){return location.protocol.indexOf('http')===0;}
 function consoleScope(){return S.scope==='work'?'work':'personal';}
 function loadConsole(){
